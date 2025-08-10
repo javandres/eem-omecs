@@ -376,6 +376,56 @@ export default function CSVViewer() {
 
         {/* CSV Data Table */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          {/* Score Summary Card */}
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  📊 Resumen de Puntajes
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Puntaje total de las preguntas mostradas en la tabla
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {filteredData.reduce((total, row) => total + row.maxScore, 0).toFixed(2)}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Puntos totales
+                </div>
+              </div>
+            </div>
+            
+            {/* Detalles adicionales */}
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                  {filteredData.filter(row => row.type === 'multiple_max').length}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Preguntas de suma múltiple
+                </div>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                  {filteredData.filter(row => row.type !== 'multiple_max' && row.maxScore > 0).length}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Preguntas de puntaje máximo
+                </div>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                  {filteredData.filter(row => row.maxScore === 0).length}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Sin puntaje asignado
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
