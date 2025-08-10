@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface CSVRow {
@@ -37,8 +37,10 @@ export default function CSVViewer() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     fetchCSVData();
   }, []);
 
@@ -98,28 +100,16 @@ export default function CSVViewer() {
       const firstRow = rows[0];
       const questionType = firstRow.type;
       
-      let finalScore = 0;
-      
+      let maxScore = 0;
       if (questionType === 'multiple_max') {
-        // Para preguntas multiple_max, sumar todos los puntajes válidos
-        const scores = rows
-          .map(row => {
-            const score = parseFloat(row.score);
-            return isNaN(score) ? 0 : score;
-          })
-          .filter(score => score >= 0); // Incluir 0 para opciones válidas
-        
-        finalScore = scores.reduce((sum, score) => sum + score, 0);
+        // Para preguntas de suma múltiple, sumar todos los puntajes
+        maxScore = rows.reduce((sum, row) => {
+          const score = parseFloat(row.score) || 0;
+          return sum + score;
+        }, 0);
       } else {
-        // Para otros tipos, tomar el puntaje máximo
-        const scores = rows
-          .map(row => {
-            const score = parseFloat(row.score);
-            return isNaN(score) ? 0 : score;
-          })
-          .filter(score => score > 0);
-        
-        finalScore = scores.length > 0 ? Math.max(...scores) : 0;
+        // Para preguntas de puntaje máximo, tomar el puntaje más alto
+        maxScore = Math.max(...rows.map(row => parseFloat(row.score) || 0));
       }
       
       return {
@@ -128,8 +118,8 @@ export default function CSVViewer() {
         section: firstRow.section,
         genero: firstRow.genero,
         potencial_omec: firstRow.potencial_omec,
-        maxScore: finalScore,
-        type: firstRow.type,
+        maxScore,
+        type: questionType,
         rowCount: rows.length
       };
     });
@@ -137,23 +127,22 @@ export default function CSVViewer() {
     setGroupedData(processedData);
   };
 
-  // Filtrar datos agrupados
-  const filteredData = groupedData.filter(row => {
-    const matchesSearch = row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         row.column.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         row.section.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSection = filterSection === '' || row.section === filterSection;
-    const matchesGenero = filterGenero === '' || row.genero === filterGenero;
-    const matchesPotencialOme = filterPotencialOme === '' || row.potencial_omec === filterPotencialOme;
+  // Computed values - only calculate when data is loaded and component is hydrated
+  const filteredData = isClient && !loading ? groupedData.filter(row => {
+    const matchesSearch = !searchTerm || 
+      row.column.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      row.section.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesSection = !filterSection || row.section === filterSection;
+    const matchesGenero = !filterGenero || row.genero === filterGenero;
+    const matchesPotencialOme = !filterPotencialOme || row.potencial_omec === filterPotencialOme;
+    
     return matchesSearch && matchesSection && matchesGenero && matchesPotencialOme;
-  });
+  }) : [];
 
-  // Obtener secciones únicas para el filtro
-  const uniqueSections = [...new Set(groupedData.map(row => row.section).filter(Boolean))];
-  const uniqueGeneros = [...new Set(groupedData.map(row => row.genero).filter(g => g && g.trim() !== '' && g !== 'N/A'))];
-  const uniquePotencialOme = [...new Set(groupedData.map(row => row.potencial_omec).filter(p => p && p.trim() !== '' && p !== 'N/A'))];
-
-  // Paginación
+  const uniqueSections = isClient && !loading ? [...new Set(groupedData.map(row => row.section).filter(Boolean))] : [];
+  
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -161,6 +150,7 @@ export default function CSVViewer() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const toggleRowExpansion = (column: string) => {
@@ -173,18 +163,19 @@ export default function CSVViewer() {
     setExpandedRows(newExpandedRows);
   };
 
+  // Don't render anything until client-side hydration is complete
+  if (!isClient) {
+    return null;
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="inline-flex items-center">
-              <svg className="animate-spin -ml-1 mr-3 h-8 w-8 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span className="text-xl text-gray-600 dark:text-gray-400">Cargando datos del CSV...</span>
-            </div>
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Cargando datos...</h2>
+            <p className="text-gray-600 dark:text-gray-400">Por favor espera mientras se cargan los datos del CSV</p>
           </div>
         </div>
       </div>
@@ -194,11 +185,13 @@ export default function CSVViewer() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-            <svg className="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
             <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-2">Error al cargar los datos</h2>
             <p className="text-red-700 dark:text-red-300 mb-4">{error}</p>
             <button 
@@ -303,13 +296,14 @@ export default function CSVViewer() {
                 id="search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por nombre, columna o sección..."
+                placeholder="Buscar por columna, nombre o sección..."
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
+            
             <div>
               <label htmlFor="section" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtrar por sección
+                Filtrar por Sección
               </label>
               <select
                 id="section"
@@ -323,9 +317,10 @@ export default function CSVViewer() {
                 ))}
               </select>
             </div>
+            
             <div>
               <label htmlFor="genero" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtrar por género
+                Filtrar por Género
               </label>
               <select
                 id="genero"
@@ -334,14 +329,15 @@ export default function CSVViewer() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Todos los géneros</option>
-                {uniqueGeneros.map((genero) => (
+                {[...new Set(groupedData.map(row => row.genero).filter(Boolean))].map((genero) => (
                   <option key={genero} value={genero}>{genero}</option>
                 ))}
               </select>
             </div>
+            
             <div>
               <label htmlFor="potencialOme" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtrar por potencial OMEC
+                Filtrar por Potencial OMEC
               </label>
               <select
                 id="potencialOme"
@@ -350,50 +346,51 @@ export default function CSVViewer() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="">Todos los potenciales</option>
-                {uniquePotencialOme.map((potencial) => (
+                {[...new Set(groupedData.map(row => row.potencial_omec).filter(Boolean))].map((potencial) => (
                   <option key={potencial} value={potencial}>{potencial}</option>
                 ))}
               </select>
             </div>
           </div>
-          
-          {/* Botón para limpiar filtros */}
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setFilterSection('');
-                setFilterGenero('');
-                setFilterPotencialOme('');
-                setCurrentPage(1);
-              }}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors border border-gray-300 dark:border-gray-600"
-            >
-              Limpiar todos los filtros
-            </button>
-          </div>
         </div>
 
-        {/* CSV Data Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          {/* Score Summary Card */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  📊 Resumen de Puntajes
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Puntaje total de las preguntas mostradas en la tabla
-                </p>
+        {/* Results Summary */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Resumen de Resultados</h3>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {filteredData.length} de {groupedData.length} preguntas
               </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {filteredData.reduce((total, row) => total + row.maxScore, 0).toFixed(2)}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Puntos totales
+                <div className="text-sm text-emerald-700 dark:text-emerald-300">Puntaje Total</div>
+              </div>
+              
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {filteredData.filter(row => row.type === 'multiple_max').length}
                 </div>
+                <div className="text-sm text-blue-700 dark:text-blue-300">Preguntas de suma múltiple</div>
+              </div>
+              
+              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {filteredData.filter(row => row.type !== 'multiple_max' && row.maxScore > 0).length}
+                </div>
+                <div className="text-sm text-purple-700 dark:text-purple-300">Preguntas de puntaje máximo</div>
+              </div>
+              
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {filteredData.filter(row => row.maxScore === 0).length}
+                </div>
+                <div className="text-sm text-orange-700 dark:text-orange-300">Sin puntaje asignado</div>
               </div>
             </div>
             
@@ -482,9 +479,8 @@ export default function CSVViewer() {
                   </tr>
                 ) : (
                   currentData.map((row, index) => (
-                    <>
+                    <React.Fragment key={`${row.column}-${index}`}>
                       <tr 
-                        key={`${index}-main`} 
                         className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                         onClick={() => toggleRowExpansion(row.column)}
                       >
@@ -586,7 +582,7 @@ export default function CSVViewer() {
                       
                       {/* Fila expandida con detalles */}
                       {expandedRows.has(row.column) && (
-                        <tr key={`${index}-expanded`} className="bg-gray-50 dark:bg-gray-800/50">
+                        <tr className="bg-gray-50 dark:bg-gray-800/50">
                           <td colSpan={6} className="px-6 py-4">
                             <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                               <h4 className="font-medium text-gray-900 dark:text-white mb-3">
@@ -635,7 +631,7 @@ export default function CSVViewer() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))
                 )}
               </tbody>
