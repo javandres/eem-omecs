@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { parse } from 'csv-parse/sync';
@@ -19,7 +19,7 @@ export async function GET() {
     });
 
     // Filtrar filas que no sean datos válidos (como las filas start, end, today)
-    const validRecords = records.filter((record: any) => 
+    const validRecords = records.filter((record: { column?: string }) => 
       record.column && 
       record.column !== 'start' && 
       record.column !== 'end' && 
