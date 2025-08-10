@@ -17,14 +17,20 @@ export interface KoboToolBoxSubmission {
   _submitted_by?: string;
   _xform_id_string?: string;
   _uuid?: string;
+  // Validation status field
+  _validation_status?: {
+    label: string;
+    uid: string;
+  };
   // Real form fields based on actual API response
+  '_01_info_redactor/_0102_name'?: string;
   '_03_info_area_de_conservacion/_0305_nombre_aconserv'?: string;
   '_03_info_area_de_conservacion/_0302_provincia'?: string;
   '_03_info_area_de_conservacion/_0307_categ_princip'?: string;
   '_03_info_area_de_conservacion/_0309_tam_ha_001'?: string;
   '_02_evaluacion_participativa_i/_0201_fecha_ev'?: string;
   '_02_evaluacion_participativa_i/_0203_num_participantes'?: string;
-  [key: string]: string | number | boolean | undefined; // For dynamic form fields
+  [key: string]: string | number | boolean | undefined | { label: string; uid: string }; // For dynamic form fields
 }
 
 export interface KoboToolBoxResponse {
@@ -171,7 +177,7 @@ class KoboToolBoxService {
       date: submissionTime,
       status: this.determineStatus(submission),
       location: this.extractLocation(submission),
-      submittedBy: submission._submitted_by || 'Usuario',
+      submittedBy: this.extractUserName(submission),
       formType: this.extractFormType(submission),
       priority: this.determinePriority(submission),
       rawData: submission, // Keep original data for reference
@@ -203,6 +209,13 @@ class KoboToolBoxService {
     }
 
     return `Área de Conservación ${submission._uuid?.slice(0, 8) || submission.id}`;
+  }
+
+  private extractUserName(submission: KoboToolBoxSubmission): string {
+    if (submission['_01_info_redactor/_0102_name']) {
+      return String(submission['_01_info_redactor/_0102_name']);
+    }
+    return 'Usuario';
   }
 
   private extractLocation(submission: KoboToolBoxSubmission): string {
@@ -256,15 +269,29 @@ class KoboToolBoxService {
   }
 
   private determineStatus(submission: KoboToolBoxSubmission): string {
-    // Use the real field name from the API
-    if (submission['_03_info_area_de_conservacion/_0306_fecha_designacion']) {
-      const designationDate = submission['_03_info_area_de_conservacion/_0306_fecha_designacion'];
-      if (designationDate) {
-        return 'Designado';
-      }
+    // Check if validation status exists and has a label
+    if (submission._validation_status && typeof submission._validation_status === 'object' && 'label' in submission._validation_status) {
+      const validationLabel = submission._validation_status.label;
+      
+      // Map English statuses to Spanish translations
+      const statusTranslations: Record<string, string> = {
+        'Approved': 'Aprobado',
+        'Not Approved': 'No Aprobado',
+        'On Hold': 'En Espera',
+        'Not reviewed': 'No Revisado',
+        'Pending': 'Pendiente',
+        'Rejected': 'Rechazado',
+        'Under Review': 'En Revisión',
+        'Draft': 'Borrador',
+        'Submitted': 'Enviado',
+        'Completed': 'Completado'
+      };
+      
+      // Return Spanish translation if available, otherwise return the original label
+      return statusTranslations[validationLabel] || validationLabel;
     }
 
-    // Fallback to other possible fields
+    // Fallback to other possible status fields
     const statusFields = [
       'estado_levantamiento',
       'estado',
