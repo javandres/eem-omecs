@@ -1,18 +1,18 @@
 import { useState, useCallback } from 'react';
 import { scoringService, ScoringResult } from '../services/scoringService';
-import { KoboToolBoxSubmission } from '../services/koboToolBox';
+import { KoboToolBoxSubmission, TransformedSubmission } from '../services/koboToolBox';
 
 export function useScoring() {
   const [scoringResult, setScoringResult] = useState<ScoringResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const evaluateSubmission = useCallback(async (submission: KoboToolBoxSubmission) => {
+  const evaluateSubmission = useCallback(async (submission: TransformedSubmission) => {
     try {
       setLoading(true);
       setError(null);
       
-      const result = await scoringService.evaluateSubmission(submission);
+      const result = await scoringService.evaluateSubmission(submission.rawData);
       setScoringResult(result);
       return result;
     } catch (err) {

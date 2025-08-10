@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
 interface CSVRow {
@@ -44,12 +44,6 @@ export default function CSVViewer() {
     fetchCSVData();
   }, []);
 
-  useEffect(() => {
-    if (csvData.length > 0) {
-      processAndGroupData();
-    }
-  }, [csvData]);
-
   const fetchCSVData = async () => {
     try {
       setLoading(true);
@@ -66,7 +60,7 @@ export default function CSVViewer() {
     }
   };
 
-  const processAndGroupData = () => {
+  const processAndGroupData = useCallback(() => {
     // Agrupar por columna, filtrando solo las que tienen sección asignada
     const grouped = csvData.reduce((acc: { [key: string]: CSVRow[] }, row) => {
       if (row.column && 
@@ -125,7 +119,13 @@ export default function CSVViewer() {
     });
 
     setGroupedData(processedData);
-  };
+  }, [csvData]);
+
+  useEffect(() => {
+    if (csvData.length > 0) {
+      processAndGroupData();
+    }
+  }, [csvData, processAndGroupData]);
 
   // Computed values - only calculate when data is loaded and component is hydrated
   const filteredData = isClient && !loading ? groupedData.filter(row => {

@@ -33,7 +33,7 @@ export default function TestTokenPage() {
         try {
           const data = JSON.parse(text);
           addResult(`✅ Éxito JSON: ${JSON.stringify(data, null, 2)}`);
-        } catch (e) {
+        } catch {
           addResult(`❌ Error parsing JSON: ${first500}`);
         }
       } else {

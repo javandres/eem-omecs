@@ -22,22 +22,9 @@ export default function Home() {
       case "Completado":
         return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400";
       case "En Proceso":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-emerald-400";
       case "Pendiente de Revisión":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "Alta":
-        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-      case "Media":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
-      case "Baja":
-        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
     }
@@ -153,7 +140,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Levantamientos</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{submissions.length}</p>
                 <p className="text-xs text-orange-600 dark:text-orange-400">
                   {loading ? 'Cargando...' : `${submissions.length} en esta página`}
                 </p>
@@ -177,7 +164,7 @@ export default function Home() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Levantamientos KoboToolBox</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {loading ? 'Cargando datos...' : `Formularios de información recopilados (${totalCount} total)`}
+                  {loading ? 'Cargando datos...' : `Formularios de información recopilados (${submissions.length} total)`}
                 </p>
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
                   💡 Haz clic en cualquier fila para ver los detalles del levantamiento
@@ -317,7 +304,7 @@ export default function Home() {
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700 dark:text-gray-300">
-                Mostrando <span className="font-medium">{submissions.length}</span> de <span className="font-medium">{totalCount}</span> levantamientos
+                Mostrando <span className="font-medium">{submissions.length}</span> de <span className="font-medium">{submissions.length}</span> levantamientos
               </div>
               <div className="flex items-center space-x-2">
                 <button 

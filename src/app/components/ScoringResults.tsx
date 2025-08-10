@@ -2,11 +2,7 @@
 
 import { useState } from 'react';
 import { 
-  ScoringResult, 
-  SectionScore, 
-  GenderScore, 
-  OmecPotentialScore,
-  DetailedResult 
+  ScoringResult
 } from '../services/scoringService';
 
 interface ScoringResultsProps {

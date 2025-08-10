@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { koboToolBoxService, KoboToolBoxSubmission } from '../services/koboToolBox';
 
 export interface TransformedSubmission {
@@ -25,7 +25,7 @@ export function useKoboToolBox() {
   const [hasPreviousPage, setHasPreviousPage] = useState(false);
   const [connectionTested, setConnectionTested] = useState(false);
 
-  const fetchSubmissions = async (page: number = 1) => {
+  const fetchSubmissions = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -63,7 +63,7 @@ export function useKoboToolBox() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [connectionTested]);
 
   const refreshData = () => {
     fetchSubmissions(currentPage);

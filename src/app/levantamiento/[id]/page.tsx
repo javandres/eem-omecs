@@ -2,32 +2,32 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useCallback, useState } from 'react';
-import { koboToolBoxService, KoboToolBoxSubmission } from '../../services/koboToolBox';
+import { koboToolBoxService, KoboToolBoxSubmission, TransformedSubmission } from '../../services/koboToolBox';
 import { useScoring } from '../../hooks/useScoring';
 import ScoringResults from '../../components/ScoringResults';
 import Link from 'next/link';
 
 export default function LevantamientoPage() {
   const params = useParams();
-  const [levantamiento, setLevantamiento] = useState<KoboToolBoxSubmission | null>(null);
+  const [levantamiento, setLevantamiento] = useState<TransformedSubmission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { scoringResult, loading: scoringLoading, evaluateSubmission } = useScoring();
 
   const id = params.id as string;
 
-  useEffect(() => {
-    if (id) {
-      fetchLevantamiento();
-    }
-  }, [id]);
-
   const fetchLevantamiento = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const data = await koboToolBoxService.getSubmissionById(id);
+      const submissionData = await koboToolBoxService.getSubmissionById(id);
+      const data = koboToolBoxService.transformSubmission(submissionData);
+
+      if (!data) {
+        throw new Error('No se pudieron transformar los datos del levantamiento');
+      }
+
       setLevantamiento(data);
       
       // Evaluate scoring after loading levantamiento
@@ -39,6 +39,12 @@ export default function LevantamientoPage() {
       setLoading(false);
     }
   }, [id, evaluateSubmission]);
+
+  useEffect(() => {
+    if (id) {
+      fetchLevantamiento();
+    }
+  }, [id, fetchLevantamiento]);
 
   if (loading) {
     return (
@@ -111,8 +117,8 @@ export default function LevantamientoPage() {
     );
   }
 
-  // Transform the data to get the title
-  const transformedData = koboToolBoxService.transformSubmission(levantamiento);
+  // No need to transform again - levantamiento is already TransformedSubmission
+  const transformedData = levantamiento;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -184,7 +190,7 @@ export default function LevantamientoPage() {
                     {transformedData.title}
                   </h1>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    ID: {levantamiento._uuid || levantamiento.id}
+                    ID: {levantamiento.id}
                   </p>
                 </div>
               </div>
@@ -262,7 +268,7 @@ export default function LevantamientoPage() {
                   // Create a comprehensive report
                   const report = {
                     levantamiento: {
-                      id: levantamiento._uuid || levantamiento.id,
+                      id: levantamiento.id,
                       title: transformedData.title,
                       location: transformedData.location,
                       formType: transformedData.formType,
@@ -277,7 +283,7 @@ export default function LevantamientoPage() {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `evaluacion_levantamiento_${levantamiento._uuid || levantamiento.id}_${new Date().toISOString().split('T')[0]}.json`;
+                  a.download = `evaluacion_levantamiento_${levantamiento.id}_${new Date().toISOString().split('T')[0]}.json`;
                   document.body.appendChild(a);
                   a.click();
                   document.body.removeChild(a);

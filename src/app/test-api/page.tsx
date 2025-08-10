@@ -225,7 +225,7 @@ export default function TestAPIPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Resultados de las Pruebas:</h2>
           <div className="bg-gray-100 rounded-lg p-4 h-96 overflow-y-auto">
             {testResults.length === 0 ? (
-              <p className="text-gray-500">Selecciona un tipo de prueba y haz clic en "Ejecutar Pruebas" para comenzar</p>
+              <p className="text-gray-500">Selecciona un tipo de prueba y haz clic en &quot;Ejecutar Pruebas&quot; para comenzar</p>
             ) : (
               <pre className="text-sm text-gray-800 whitespace-pre-wrap">
                 {testResults.join('\n')}

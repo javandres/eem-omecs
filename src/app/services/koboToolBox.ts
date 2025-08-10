@@ -40,6 +40,18 @@ export interface KoboToolBoxResponse {
   results: KoboToolBoxSubmission[];
 }
 
+export interface TransformedSubmission {
+  id: string;
+  title: string;
+  date: string;
+  status: string;
+  location: string;
+  submittedBy: string;
+  formType: string;
+  priority: string;
+  rawData: KoboToolBoxSubmission;
+}
+
 class KoboToolBoxService {
   private baseURL: string;
   private formId: string;
@@ -155,21 +167,15 @@ class KoboToolBoxService {
     }
   }
 
+  
+
   // Helper method to transform KoboToolBox data to our format
-  transformSubmission(submission: KoboToolBoxSubmission): {
-    id: string;
-    title: string;
-    date: string;
-    status: string;
-    location: string;
-    submittedBy: string;
-    formType: string;
-    priority: string;
-    rawData: KoboToolBoxSubmission;
-  } {
+  transformSubmission(submission: KoboToolBoxSubmission): TransformedSubmission {
     const submissionTime = submission._submission_time
       ? new Date(submission._submission_time).toISOString().split('T')[0]
       : new Date().toISOString().split('T')[0];
+
+    const cleanedSubmission = this.cleanSubmission(submission);
 
     return {
       id: submission._uuid || submission.id,
@@ -180,7 +186,7 @@ class KoboToolBoxService {
       submittedBy: this.extractUserName(submission),
       formType: this.extractFormType(submission),
       priority: this.determinePriority(submission),
-      rawData: submission, // Keep original data for reference
+      rawData: cleanedSubmission, // Keep original data for reference
     };
   }
 
@@ -352,6 +358,28 @@ class KoboToolBoxService {
     }
 
     return 'Media'; // Default priority
+  }
+
+  private cleanSubmission(submission: KoboToolBoxSubmission): KoboToolBoxSubmission {
+    const cleanedSubmission: KoboToolBoxSubmission = {
+      id: submission.id,
+      title: submission.title,
+      date: submission.date,
+      status: submission.status,
+      location: submission.location,
+      submittedBy: submission.submittedBy,
+      formType: submission.formType,
+      priority: submission.priority,
+    };
+    for (const key in submission) {
+      if (key.includes('/')) {
+        const lastValue = key.split('/').pop();
+        if (lastValue) {
+          cleanedSubmission[lastValue] = submission[key];
+        }
+      }
+    }
+    return cleanedSubmission;
   }
 }
 
