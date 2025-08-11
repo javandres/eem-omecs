@@ -72,12 +72,34 @@ class ScoringService {
         throw new Error('Failed to load scoring rules');
       }
       const rules = await response.json();
-      this.scoringRules = rules.filter((rule: { column?: string; score?: string | number; type?: string }) => 
+      
+      // Filter and validate rules
+      const validRules = rules.filter((rule: { column?: string; score?: string | number; type?: string }) => 
         rule.column && 
         rule.score !== undefined && 
         rule.score !== '' &&
         rule.type
       ) as ScoringRule[];
+      
+      // Convert score to number if it's a string
+      this.scoringRules = validRules.map(rule => ({
+        ...rule,
+        score: typeof rule.score === 'string' ? parseFloat(rule.score) : rule.score
+      }));
+      
+      // Check for potential duplicate rules
+      const columnCounts = new Map<string, number>();
+      for (const rule of this.scoringRules) {
+        columnCounts.set(rule.column, (columnCounts.get(rule.column) || 0) + 1);
+      }
+      
+      const duplicates = Array.from(columnCounts.entries()).filter(([_, count]) => count > 1);
+      if (duplicates.length > 0) {
+        console.warn('Warning: Found columns with multiple rules:', duplicates);
+      }
+      
+      console.log(`Loaded ${this.scoringRules.length} scoring rules`);
+      console.log('Rules summary:', this.getScoringRulesSummary());
     } catch (error) {
       console.error('Error loading scoring rules:', error);
       throw error;
@@ -93,26 +115,45 @@ class ScoringService {
     let totalScore = 0;
     let maxPossibleScore = 0;
 
-    // Evaluate each scoring rule
-    for (const rule of this.scoringRules) {
-      const actualValue = this.extractValue(submission, rule.column);
-      const score = this.calculateScore(rule, actualValue);
+    // Get all unique columns from submission that have values
+    const submissionColumns = this.getSubmissionColumns(submission);
+    console.log(`Evaluating submission with ${submissionColumns.length} columns:`, submissionColumns);
+    
+    // Iterate through each submission attribute/column
+    for (const column of submissionColumns) {
+      // Find all rules that apply to this column
+      const columnRules = this.getRulesForColumn(column);
       
-      detailedResults.push({
-        column: rule.column,
-        question: rule.name,
-        section: rule.section,
-        gender: rule.genero,
-        omecPotential: rule.potencial_omec,
-        expectedValue: rule.value,
-        actualValue: actualValue || 'No respondido',
-        score: score,
-        maxScore: rule.score,
-        type: rule.type
-      });
+      if (columnRules.length === 0) {
+        console.log(`No scoring rules found for column: ${column}`);
+        continue;
+      }
+      
+      console.log(`Found ${columnRules.length} rules for column: ${column}`);
+      const actualValue = this.extractValue(submission, column);
+      console.log(`Column ${column} has value: ${actualValue}`);
+      
+      // Evaluate each rule for this column
+      for (const rule of columnRules) {
+        const score = this.calculateScore(rule, actualValue);
+        console.log(`Rule ${rule.name} (${rule.type}) scored: ${score}/${rule.score}`);
+        
+        detailedResults.push({
+          column: rule.column,
+          question: rule.name,
+          section: rule.section,
+          gender: rule.genero,
+          omecPotential: rule.potencial_omec,
+          expectedValue: rule.value,
+          actualValue: actualValue || 'No respondido',
+          score: score,
+          maxScore: rule.score,
+          type: rule.type
+        });
 
-      totalScore += score;
-      maxPossibleScore += rule.score;
+        totalScore += score;
+        maxPossibleScore += rule.score;
+      }
     }
 
     // Calculate section scores
@@ -124,7 +165,7 @@ class ScoringService {
     // Calculate OMEC potential scores
     const omecPotentialScores = this.calculateOmecPotentialScores(detailedResults);
 
-    return {
+    const result = {
       totalScore,
       maxPossibleScore,
       percentage: maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0,
@@ -133,19 +174,38 @@ class ScoringService {
       omecPotentialScores,
       detailedResults
     };
+
+    // Ensure percentage is calculated with proper precision
+    result.percentage = Math.round(result.percentage * 100) / 100;
+
+    // Validate the result
+    const validation = this.validateScoringResult(result);
+    if (!validation.isValid) {
+      console.warn('Scoring validation failed:', validation.issues);
+    }
+
+    console.log(`Evaluation complete. Total score: ${totalScore}/${maxPossibleScore} (${result.percentage.toFixed(2)}%)`);
+    console.log(`Raw percentage calculation: (${totalScore} / ${maxPossibleScore}) * 100 = ${((totalScore / maxPossibleScore) * 100).toFixed(6)}%`);
+    console.log(`Final rounded percentage: ${result.percentage.toFixed(6)}%`);
+    console.log(`Processed ${detailedResults.length} rules across ${submissionColumns.length} columns`);
+    
+    return result;
   }
 
   private extractValue(submission: KoboToolBoxSubmission, column: string): string | null {
-
-    // columna name in submission inlcudes category and group, we need to extract the last value in the string 
-    const lastValue = column.split('/').pop();
-    if (lastValue) {
-      return submission[lastValue] ? String(submission[lastValue]) : null;
+    // Try direct column access first
+    if (submission[column] !== undefined && submission[column] !== null && submission[column] !== '') {
+      return String(submission[column]);
     }
-    return null;        
     
+    // If direct access fails, try to extract from nested structure
+    // Column name in submission might include category and group, extract the last value
+    const lastValue = column.split('/').pop();
+    if (lastValue && submission[lastValue] !== undefined && submission[lastValue] !== null && submission[lastValue] !== '') {
+      return String(submission[lastValue]);
+    }
     
-    
+    return null;
   }
 
   private calculateScore(rule: ScoringRule, actualValue: string | null): number {
@@ -181,19 +241,19 @@ class ScoringService {
     // This can be customized based on specific requirements
     switch (rule.column) {
       case '_0309_tam_ha_001': // Area size
-        if (numericValue >= 10000) return 3;
-        if (numericValue >= 1000) return 2;
-        if (numericValue >= 100) return 1;
+        if (numericValue >= 10000) return Math.min(3, rule.score);
+        if (numericValue >= 1000) return Math.min(2, rule.score);
+        if (numericValue >= 100) return Math.min(1, rule.score);
         return 0;
       
       case '_040502_num_guardabosq_x_ha': // Number of rangers
-        if (numericValue >= 5) return 3;
-        if (numericValue >= 2) return 2;
-        if (numericValue >= 1) return 1;
+        if (numericValue >= 5) return Math.min(3, rule.score);
+        if (numericValue >= 2) return Math.min(2, rule.score);
+        if (numericValue >= 1) return Math.min(1, rule.score);
         return 0;
       
       default:
-        // Default scoring for numeric values
+        // Default scoring for numeric values - ensure we don't exceed the rule's max score
         return numericValue > 0 ? Math.min(rule.score, numericValue) : 0;
     }
   }
@@ -264,6 +324,31 @@ class ScoringService {
     }));
   }
 
+  private getSubmissionColumns(submission: KoboToolBoxSubmission): string[] {
+    const columns: string[] = [];
+    
+    // Extract column names from submission object
+    for (const [key, value] of Object.entries(submission)) {
+      // Skip internal fields, empty values, and non-form fields
+      if (
+        key.startsWith('_') && 
+        key !== '_validation_status' && 
+        key !== '_submission_time' && 
+        key !== '_submitted_by' && 
+        key !== '_xform_id_string' && 
+        key !== '_uuid' &&
+        value !== null && 
+        value !== undefined && 
+        value !== '' &&
+        typeof value !== 'object'
+      ) {
+        columns.push(key);
+      }
+    }
+    
+    return columns;
+  }
+
   getScoringRules(): ScoringRule[] {
     return this.scoringRules;
   }
@@ -278,6 +363,78 @@ class ScoringService {
 
   getOmecPotentialCategories(): string[] {
     return [...new Set(this.scoringRules.map(rule => rule.potencial_omec).filter(Boolean))];
+  }
+
+  private getRulesForColumn(column: string): ScoringRule[] {
+    return this.scoringRules.filter(rule => rule.column === column);
+  }
+
+  private getRulesByType(type: ScoringRuleType): ScoringRule[] {
+    return this.scoringRules.filter(rule => rule.type === type);
+  }
+
+  getScoringRulesSummary(): {
+    totalRules: number;
+    rulesByType: Record<ScoringRuleType, number>;
+    rulesByColumn: Record<string, number>;
+  } {
+    const rulesByType: Record<ScoringRuleType, number> = {
+      select: 0,
+      multiple_max: 0,
+      value: 0
+    };
+
+    const rulesByColumn: Record<string, number> = {};
+
+    for (const rule of this.scoringRules) {
+      rulesByType[rule.type]++;
+      rulesByColumn[rule.column] = (rulesByColumn[rule.column] || 0) + 1;
+    }
+
+    return {
+      totalRules: this.scoringRules.length,
+      rulesByType,
+      rulesByColumn
+    };
+  }
+
+  validateScoringResult(result: ScoringResult): {
+    isValid: boolean;
+    issues: string[];
+    expectedTotal: number;
+    expectedMax: number;
+    actualTotal: number;
+    actualMax: number;
+  } {
+    const issues: string[] = [];
+    
+    // Calculate expected totals from detailed results
+    const expectedTotal = result.detailedResults.reduce((sum, detail) => sum + detail.score, 0);
+    const expectedMax = result.detailedResults.reduce((sum, detail) => sum + detail.maxScore, 0);
+    
+    // Check if totals match
+    if (Math.abs(expectedTotal - result.totalScore) > 0.01) {
+      issues.push(`Total score mismatch: expected ${expectedTotal}, got ${result.totalScore}`);
+    }
+    
+    if (Math.abs(expectedMax - result.maxPossibleScore) > 0.01) {
+      issues.push(`Max score mismatch: expected ${expectedMax}, got ${result.maxPossibleScore}`);
+    }
+    
+    // Check if percentage calculation is correct
+    const expectedPercentage = expectedMax > 0 ? (expectedTotal / expectedMax) * 100 : 0;
+    if (Math.abs(expectedPercentage - result.percentage) > 0.01) {
+      issues.push(`Percentage mismatch: expected ${expectedPercentage.toFixed(2)}%, got ${result.percentage.toFixed(2)}%`);
+    }
+    
+    return {
+      isValid: issues.length === 0,
+      issues,
+      expectedTotal,
+      expectedMax,
+      actualTotal: result.totalScore,
+      actualMax: result.maxPossibleScore
+    };
   }
 }
 

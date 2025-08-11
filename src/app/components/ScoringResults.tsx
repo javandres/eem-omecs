@@ -38,7 +38,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
           <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 mb-4">
             <div className="text-center">
               <div className="text-3xl font-bold text-white">
-                {scoringResult.percentage.toFixed(1)}%
+                {scoringResult.percentage.toFixed(2)}%
               </div>
               <div className="text-sm text-emerald-100">
                 {scoringResult.totalScore}/{scoringResult.maxPossibleScore}
