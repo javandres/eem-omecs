@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useKoboToolBox } from './hooks/useKoboToolBox';
+import { scoringService, SectionScore } from './services/scoringService';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   const {
@@ -16,6 +18,65 @@ export default function Home() {
     nextPage,
     previousPage,
   } = useKoboToolBox();
+
+  const [submissionScores, setSubmissionScores] = useState<Record<string, number>>({});
+
+  // Calculate scores for submissions
+  useEffect(() => {
+    const calculateScores = async () => {
+      if (submissions.length === 0) return;
+      
+      try {
+        await scoringService.loadScoringRules();
+        const scores: Record<string, number> = {};
+        
+        for (const submission of submissions) {
+          try {
+            const result = await scoringService.evaluateSubmission(submission.rawData);
+            // Calculate general score from section scores
+            const sectionTotalScore = result.sectionScores.reduce((sum: number, section: SectionScore) => sum + section.score, 0);
+            const sectionMaxScore = result.sectionScores.reduce((sum: number, section: SectionScore) => sum + section.maxScore, 0);
+            const generalPercentage = sectionMaxScore > 0 ? (sectionTotalScore / sectionMaxScore) * 100 : 0;
+            scores[submission.id] = generalPercentage;
+          } catch (error) {
+            console.warn(`Error calculating score for submission ${submission.id}:`, error);
+            scores[submission.id] = 0;
+          }
+        }
+        
+        setSubmissionScores(scores);
+      } catch (error) {
+        console.error('Error loading scoring rules:', error);
+      }
+    };
+
+    calculateScores();
+  }, [submissions]);
+
+  // Score icon component
+  const ScoreIcon = ({ percentage, size = 'xs' }: { percentage: number; size?: 'xs' | 'sm' | 'md' }) => {
+    const getIconColor = (percentage: number) => {
+      if (percentage >= 80) return 'text-green-600 bg-green-100 dark:bg-green-900/20';
+      if (percentage >= 60) return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20';
+      if (percentage >= 40) return 'text-orange-600 bg-orange-100 dark:bg-orange-900/20';
+      return 'text-red-600 bg-red-100 dark:bg-red-900/20';
+    };
+
+    const sizeClasses = {
+      xs: 'w-6 h-6 text-xs',
+      sm: 'w-8 h-8 text-sm',
+      md: 'w-10 h-10 text-base'
+    };
+
+    return (
+      <div 
+        className={`inline-flex items-center justify-center rounded-full font-bold ${getIconColor(percentage)} ${sizeClasses[size]} cursor-help transition-all hover:scale-110`}
+        title={`Puntuación General: ${percentage.toFixed(1)}%`}
+      >
+        {percentage.toFixed(0)}%
+      </div>
+    );
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -90,51 +151,35 @@ export default function Home() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          {/* Average General Score Card */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Áreas</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">1,247</p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400">+12% este mes</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Puntuación Promedio</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {Object.keys(submissionScores).length > 0 
+                    ? (Object.values(submissionScores).reduce((sum, score) => sum + score, 0) / Object.keys(submissionScores).length).toFixed(1)
+                    : '--'
+                  }%
+                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                  {Object.keys(submissionScores).length > 0 ? `${Object.keys(submissionScores).length} evaluados` : 'Calculando...'}
+                </p>
               </div>
               <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Superficie Total</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">2.1M ha</p>
-                <p className="text-xs text-blue-600 dark:text-blue-400">+5% este mes</p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3" />
-                </svg>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Especies Protegidas</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">8,456</p>
-                <p className="text-xs text-purple-600 dark:text-purple-400">+23% este mes</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
+
+      
+
+         
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
@@ -234,7 +279,9 @@ export default function Home() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Estado
                     </th>
-
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Puntuación General
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -291,8 +338,13 @@ export default function Home() {
                             {submission.status}
                           </span>
                         </td>
-                      
-                        
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {submissionScores[submission.id] !== undefined ? (
+                            <ScoreIcon percentage={submissionScores[submission.id]} />
+                          ) : (
+                            <div className="w-6 h-6 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+                          )}
+                        </td>
                       </tr>
                     ))
                   )}

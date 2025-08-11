@@ -19,12 +19,13 @@ export async function GET() {
     });
 
     // Filtrar filas que no sean datos válidos (como las filas start, end, today)
-    const validRecords = records.filter((record: { column?: string }) => 
-      record.column && 
-      record.column !== 'start' && 
-      record.column !== 'end' && 
-      record.column !== 'today'
-    );
+    const validRecords = records.filter((record: unknown) => {
+      const rec = record as Record<string, unknown>;
+      return rec.column && 
+        rec.column !== 'start' && 
+        rec.column !== 'end' && 
+        rec.column !== 'today';
+    });
 
     return NextResponse.json(validRecords);
   } catch (error) {

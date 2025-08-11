@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { 
-  ScoringResult,
-  ScoringRule
+  ScoringResult
 } from '../services/scoringService';
 
 interface ScoringResultsProps {
@@ -69,6 +68,28 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     if (percentage >= 60) return 'bg-yellow-500';
     if (percentage >= 40) return 'bg-orange-500';
     return 'bg-red-500';
+  };
+
+  // Small score icon component for headers
+  const ScoreIcon = ({ percentage, size = 'sm' }: { percentage: number; size?: 'xs' | 'sm' | 'md' }) => {
+    const getIconColor = (percentage: number) => {
+      if (percentage >= 80) return 'text-green-600 bg-green-100 dark:bg-green-900/20';
+      if (percentage >= 60) return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20';
+      if (percentage >= 40) return 'text-orange-600 bg-orange-100 dark:bg-orange-900/20';
+      return 'text-red-600 bg-red-100 dark:bg-red-900/20';
+    };
+
+    const sizeClasses = {
+      xs: 'w-6 h-6 text-xs',
+      sm: 'w-8 h-8 text-sm',
+      md: 'w-10 h-10 text-base'
+    };
+
+    return (
+      <div className={`inline-flex items-center justify-center rounded-full font-bold ${getIconColor(percentage)} ${sizeClasses[size]}`}>
+        {percentage.toFixed(0)}%
+      </div>
+    );
   };
 
   const renderQuestionDetails = (section: string, type: 'section' | 'gender' | 'omec') => {
@@ -234,9 +255,12 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
       <div className="space-y-6">
         {/* Overall Score */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Puntuación General
-          </h3>
+          <div className="flex items-center space-x-3 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Puntuación General
+            </h3>
+            <ScoreIcon percentage={sectionPercentage} size="sm" />
+          </div>
           <div className="text-center">
             <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r ${getGeneralScoreColor(sectionPercentage)} mb-4`}>
               <div className="text-center">
@@ -268,9 +292,12 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
             className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
             onClick={() => toggleSection(section.section)}
           >
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {section.section}
-            </h4>
+            <div className="flex items-center space-x-2">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {section.section}
+              </h4>
+              <ScoreIcon percentage={section.percentage} size="xs" />
+            </div>
             <div className="flex items-center space-x-3">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(section.percentage)}`}>
                 {section.percentage.toFixed(1)}%
@@ -317,9 +344,12 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
             className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
             onClick={() => toggleGender(gender.gender)}
           >
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {gender.gender}
-            </h4>
+            <div className="flex items-center space-x-2">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {gender.gender}
+              </h4>
+              <ScoreIcon percentage={gender.percentage} size="xs" />
+            </div>
             <div className="flex items-center space-x-3">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(gender.percentage)}`}>
                 {gender.percentage.toFixed(1)}%
@@ -366,9 +396,12 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
             className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
             onClick={() => toggleOmec(potential.potential)}
           >
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {potential.potential}
-            </h4>
+            <div className="flex items-center space-x-2">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {potential.potential}
+              </h4>
+              <ScoreIcon percentage={potential.percentage} size="xs" />
+            </div>
             <div className="flex items-center space-x-3">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(potential.percentage)}`}>
                 {potential.percentage.toFixed(1)}%
