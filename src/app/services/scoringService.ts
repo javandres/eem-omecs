@@ -259,15 +259,34 @@ class ScoringService {
   }
 
   private calculateSectionScores(detailedResults: DetailedResult[]): SectionScore[] {
-    const sectionMap = new Map<string, { score: number; maxScore: number; count: number }>();
+    const sectionMap = new Map<string, { score: number; maxScore: number; uniqueQuestions: Set<string>; questionMaxScores: Map<string, number> }>();
 
     for (const result of detailedResults) {
       if (!result.section) continue;
       
-      const current = sectionMap.get(result.section) || { score: 0, maxScore: 0, count: 0 };
+      const current = sectionMap.get(result.section) || { 
+        score: 0, 
+        maxScore: 0, 
+        uniqueQuestions: new Set(),
+        questionMaxScores: new Map()
+      };
+      
       current.score += result.score;
-      current.maxScore += result.maxScore;
-      current.count += 1;
+      
+      // Only add maxScore once per unique question (column), but use the highest maxScore
+      if (!current.questionMaxScores.has(result.column)) {
+        current.questionMaxScores.set(result.column, result.maxScore);
+        current.maxScore += result.maxScore;
+      } else {
+        // Update if we find a higher maxScore for this question
+        const currentMax = current.questionMaxScores.get(result.column)!;
+        if (result.maxScore > currentMax) {
+          current.maxScore = current.maxScore - currentMax + result.maxScore;
+          current.questionMaxScores.set(result.column, result.maxScore);
+        }
+      }
+      
+      current.uniqueQuestions.add(result.column);
       sectionMap.set(result.section, current);
     }
 
@@ -276,20 +295,39 @@ class ScoringService {
       score: data.score,
       maxScore: data.maxScore,
       percentage: data.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0,
-      questionCount: data.count
+      questionCount: data.uniqueQuestions.size
     }));
   }
 
   private calculateGenderScores(detailedResults: DetailedResult[]): GenderScore[] {
-    const genderMap = new Map<string, { score: number; maxScore: number; count: number }>();
+    const genderMap = new Map<string, { score: number; maxScore: number; uniqueQuestions: Set<string>; questionMaxScores: Map<string, number> }>();
 
     for (const result of detailedResults) {
       if (!result.gender) continue;
       
-      const current = genderMap.get(result.gender) || { score: 0, maxScore: 0, count: 0 };
+      const current = genderMap.get(result.gender) || { 
+        score: 0, 
+        maxScore: 0, 
+        uniqueQuestions: new Set(),
+        questionMaxScores: new Map()
+      };
+      
       current.score += result.score;
-      current.maxScore += result.maxScore;
-      current.count += 1;
+      
+      // Only add maxScore once per unique question (column), but use the highest maxScore
+      if (!current.questionMaxScores.has(result.column)) {
+        current.questionMaxScores.set(result.column, result.maxScore);
+        current.maxScore += result.maxScore;
+      } else {
+        // Update if we find a higher maxScore for this question
+        const currentMax = current.questionMaxScores.get(result.column)!;
+        if (result.maxScore > currentMax) {
+          current.maxScore = current.maxScore - currentMax + result.maxScore;
+          current.questionMaxScores.set(result.column, result.maxScore);
+        }
+      }
+      
+      current.uniqueQuestions.add(result.column);
       genderMap.set(result.gender, current);
     }
 
@@ -298,20 +336,39 @@ class ScoringService {
       score: data.score,
       maxScore: data.maxScore,
       percentage: data.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0,
-      questionCount: data.count
+      questionCount: data.uniqueQuestions.size
     }));
   }
 
   private calculateOmecPotentialScores(detailedResults: DetailedResult[]): OmecPotentialScore[] {
-    const potentialMap = new Map<string, { score: number; maxScore: number; count: number }>();
+    const potentialMap = new Map<string, { score: number; maxScore: number; uniqueQuestions: Set<string>; questionMaxScores: Map<string, number> }>();
 
     for (const result of detailedResults) {
       if (!result.omecPotential) continue;
       
-      const current = potentialMap.get(result.omecPotential) || { score: 0, maxScore: 0, count: 0 };
+      const current = potentialMap.get(result.omecPotential) || { 
+        score: 0, 
+        maxScore: 0, 
+        uniqueQuestions: new Set(),
+        questionMaxScores: new Map()
+      };
+      
       current.score += result.score;
-      current.maxScore += result.maxScore;
-      current.count += 1;
+      
+      // Only add maxScore once per unique question (column), but use the highest maxScore
+      if (!current.questionMaxScores.has(result.column)) {
+        current.questionMaxScores.set(result.column, result.maxScore);
+        current.maxScore += result.maxScore;
+      } else {
+        // Update if we find a higher maxScore for this question
+        const currentMax = current.questionMaxScores.get(result.column)!;
+        if (result.maxScore > currentMax) {
+          current.maxScore = current.maxScore - currentMax + result.maxScore;
+          current.questionMaxScores.set(result.column, result.maxScore);
+        }
+      }
+      
+      current.uniqueQuestions.add(result.column);
       potentialMap.set(result.omecPotential, current);
     }
 
@@ -320,7 +377,7 @@ class ScoringService {
       score: data.score,
       maxScore: data.maxScore,
       percentage: data.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0,
-      questionCount: data.count
+      questionCount: data.uniqueQuestions.size
     }));
   }
 
