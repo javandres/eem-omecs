@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { 
   ScoringResult
 } from '../services/scoringService';
@@ -11,8 +10,6 @@ interface ScoringResultsProps {
 }
 
 export default function ScoringResults({ scoringResult, onExport }: ScoringResultsProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'sections' | 'gender' | 'omec' | 'details'>('overview');
-
   const getScoreColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-600 bg-green-100 dark:bg-green-900/20';
     if (percentage >= 60) return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20';
@@ -51,67 +48,22 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Secciones Evaluadas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {scoringResult.sectionScores.length}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-              <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Categorías de Género</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {scoringResult.genderScores.length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/20 rounded-lg">
-              <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Potencial OMEC</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {scoringResult.omecPotentialScores.length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </div>
   );
 
   const renderSections = () => (
     <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        Por Secciones
+      </h3>
       {scoringResult.sectionScores.map((section, index) => (
         <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
               {section.section}
-            </h3>
+            </h4>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(section.percentage)}`}>
               {section.percentage.toFixed(1)}%
             </span>
@@ -136,12 +88,15 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
 
   const renderGender = () => (
     <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        Por Género
+      </h3>
       {scoringResult.genderScores.map((gender, index) => (
         <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {gender.gender}
-            </h3>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+              
+            </h4>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(gender.percentage)}`}>
               {gender.percentage.toFixed(1)}%
             </span>
@@ -166,12 +121,15 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
 
   const renderOmec = () => (
     <div className="space-y-6">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        Potencial OMEC
+      </h3>
       {scoringResult.omecPotentialScores.map((potential, index) => (
         <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {potential.potential}
-            </h3>
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+            
+            </h4>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(potential.percentage)}`}>
               {potential.percentage.toFixed(1)}%
             </span>
@@ -196,6 +154,9 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
 
   const renderDetails = () => (
     <div className="space-y-4">
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+        Detalles de la Evaluación
+      </h3>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -252,7 +213,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Export Button */}
       {onExport && (
         <div className="flex justify-end">
@@ -268,41 +229,20 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="flex space-x-8 px-6" aria-label="Tabs">
-            {[
-              { id: 'overview', name: 'Resumen General', icon: '📊' },
-              { id: 'sections', name: 'Por Secciones', icon: '📋' },
-              { id: 'gender', name: 'Por Género', icon: '👥' },
-              { id: 'omec', name: 'Potencial OMEC', icon: '🌱' },
-              { id: 'details', name: 'Detalles', icon: '🔍' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'overview' | 'sections' | 'gender' | 'omec' | 'details')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.name}
-              </button>
-            ))}
-          </nav>
-        </div>
+      {/* Puntuación General */}
+      {renderOverview()}
 
-        <div className="p-6">
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'sections' && renderSections()}
-          {activeTab === 'gender' && renderGender()}
-          {activeTab === 'omec' && renderOmec()}
-          {activeTab === 'details' && renderDetails()}
-        </div>
-      </div>
+      {/* Por Secciones */}
+      {renderSections()}
+
+      {/* Por Género */}
+      {renderGender()}
+
+      {/* Potencial OMEC */}
+      {renderOmec()}
+
+      {/* Detalles de la Evaluación */}
+      { /* renderDetails() */}
     </div>
   );
 }
