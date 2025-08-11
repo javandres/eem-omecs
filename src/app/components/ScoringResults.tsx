@@ -222,6 +222,14 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     const sectionMaxScore = scoringResult.sectionScores.reduce((sum, section) => sum + section.maxScore, 0);
     const sectionPercentage = sectionMaxScore > 0 ? (sectionTotalScore / sectionMaxScore) * 100 : 0;
 
+    // Get the appropriate color based on percentage
+    const getGeneralScoreColor = (percentage: number) => {
+      if (percentage >= 80) return 'from-green-500 to-emerald-600';
+      if (percentage >= 60) return 'from-yellow-500 to-amber-600';
+      if (percentage >= 40) return 'from-orange-500 to-red-500';
+      return 'from-red-500 to-red-600';
+    };
+
     return (
       <div className="space-y-6">
         {/* Overall Score */}
@@ -230,12 +238,12 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
             Puntuación General
           </h3>
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 mb-4">
+            <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r ${getGeneralScoreColor(sectionPercentage)} mb-4`}>
               <div className="text-center">
                 <div className="text-3xl font-bold text-white">
                   {sectionPercentage.toFixed(2)}%
                 </div>
-                <div className="text-sm text-emerald-100">
+                <div className="text-sm text-white">
                   {sectionTotalScore}/{sectionMaxScore}
                 </div>
               </div>
