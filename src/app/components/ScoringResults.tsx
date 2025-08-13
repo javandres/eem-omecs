@@ -14,7 +14,24 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [expandedGenders, setExpandedGenders] = useState<Set<string>>(new Set());
   const [expandedOmec, setExpandedOmec] = useState<Set<string>>(new Set());
-  const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(new Set());
+  const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(() => {
+    // Initialize with all questions collapsed by default
+    const allQuestionKeys = new Set<string>();
+    if (scoringResult?.detailedResults) {
+      scoringResult.detailedResults.forEach(result => {
+        if (result.section) {
+          allQuestionKeys.add(`section-${result.section}-${result.column}`);
+        }
+        if (result.gender) {
+          allQuestionKeys.add(`gender-${result.gender}-${result.column}`);
+        }
+        if (result.omecPotential) {
+          allQuestionKeys.add(`omec-${result.omecPotential}-${result.column}`);
+        }
+      });
+    }
+    return allQuestionKeys;
+  });
 
   const toggleSection = (section: string) => {
     const newExpanded = new Set(expandedSections);
@@ -22,6 +39,13 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
       newExpanded.delete(section);
     } else {
       newExpanded.add(section);
+      // When expanding a section, collapse all question details by default
+      // Get all question keys for this section and add them to collapsedQuestions
+      // while preserving existing collapsed state of other questions
+      const sectionQuestions = scoringResult.detailedResults
+        .filter(result => result.section === section)
+        .map(result => `section-${section}-${result.column}`);
+      setCollapsedQuestions(prev => new Set([...prev, ...sectionQuestions]));
     }
     setExpandedSections(newExpanded);
   };
@@ -32,6 +56,13 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
       newExpanded.delete(gender);
     } else {
       newExpanded.add(gender);
+      // When expanding a gender group, collapse all question details by default
+      // Get all question keys for this gender and add them to collapsedQuestions
+      // while preserving existing collapsed state of other questions
+      const genderQuestions = scoringResult.detailedResults
+        .filter(result => result.gender === gender)
+        .map(result => `gender-${gender}-${result.column}`);
+      setCollapsedQuestions(prev => new Set([...prev, ...genderQuestions]));
     }
     setExpandedGenders(newExpanded);
   };
@@ -42,6 +73,12 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
       newExpanded.delete(potential);
     } else {
       newExpanded.add(potential);
+      // When expanding an OMEC potential group, collapse all question details by default
+      // Get all question keys for this OMEC potential and add them to collapsedQuestions
+      const omecQuestions = scoringResult.detailedResults
+        .filter(result => result.omecPotential === potential)
+        .map(result => `omec-${potential}-${result.column}`);
+      setCollapsedQuestions(prev => new Set([...prev, ...omecQuestions]));
     }
     setExpandedOmec(newExpanded);
   };
@@ -169,29 +206,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                 {/* Collapsible Question Details for multiple_max */}
                 {!isCollapsed && (
                   <div className="px-4 pb-4 space-y-3">
-                    {/* Summary section */}
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-blue-600 dark:text-blue-400">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </span>
-                          <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                            Resumen de Selección
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-blue-800 dark:text-blue-200">
-                            {firstResult.multipleMaxDetails.filter(opt => opt.isSelected).length} de {firstResult.multipleMaxDetails.length} opciones seleccionadas
-                          </span>
-                          <div className="text-xs text-blue-600 dark:text-blue-400">
-                            Puntuación: {firstResult.score}/{firstResult.maxScore} pts
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    
                     
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
                       Opciones disponibles:
