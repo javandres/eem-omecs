@@ -15,6 +15,17 @@ export interface ScoringRule {
   type: ScoringRuleType;
 }
 
+// New interface for grouped multiple_max rules
+export interface GroupedMultipleMaxRule {
+  baseColumn: string;
+  rules: ScoringRule[];
+  maxPossibleScore: number;
+  questionName: string;
+  section: string;
+  genero: string;
+  potencial_omec: string;
+}
+
 export interface ScoringResult {
   totalScore: number;
   maxPossibleScore: number;
@@ -64,6 +75,7 @@ export interface DetailedResult {
 
 class ScoringService {
   private scoringRules: ScoringRule[] = [];
+  private groupedMultipleMaxRules: Map<string, GroupedMultipleMaxRule> = new Map();
 
   async loadScoringRules(): Promise<void> {
     try {
@@ -87,6 +99,9 @@ class ScoringService {
         score: typeof rule.score === 'string' ? parseFloat(rule.score) : rule.score
       }));
       
+      // Group multiple_max rules by base column name
+      this.groupMultipleMaxRules();
+      
       // Check for potential duplicate rules
       const columnCounts = new Map<string, number>();
       for (const rule of this.scoringRules) {
@@ -99,11 +114,46 @@ class ScoringService {
       }
       
       console.log(`Loaded ${this.scoringRules.length} scoring rules`);
+      console.log(`Grouped ${this.groupedMultipleMaxRules.size} multiple_max question groups`);
       console.log('Rules summary:', this.getScoringRulesSummary());
     } catch (error) {
       console.error('Error loading scoring rules:', error);
       throw error;
     }
+  }
+
+  private groupMultipleMaxRules(): void {
+    this.groupedMultipleMaxRules.clear();
+    
+    // Find all multiple_max rules
+    const multipleMaxRules = this.scoringRules.filter(rule => rule.type === 'multiple_max');
+    
+    // Group by base column name (remove the /option part)
+    for (const rule of multipleMaxRules) {
+      const baseColumn = rule.column.split('/')[0];
+      
+      if (!this.groupedMultipleMaxRules.has(baseColumn)) {
+        this.groupedMultipleMaxRules.set(baseColumn, {
+          baseColumn,
+          rules: [],
+          maxPossibleScore: 0,
+          questionName: rule.name.split('/')[0], // Get base question name
+          section: rule.section,
+          genero: rule.genero,
+          potencial_omec: rule.potencial_omec
+        });
+      }
+      
+      const group = this.groupedMultipleMaxRules.get(baseColumn)!;
+      group.rules.push(rule);
+      
+      // Calculate max possible score (sum of all positive scores)
+      if (rule.score > 0) {
+        group.maxPossibleScore += rule.score;
+      }
+    }
+    
+    console.log('Multiple max rules grouped:', Array.from(this.groupedMultipleMaxRules.entries()));
   }
 
   async evaluateSubmission(submission: KoboToolBoxSubmission): Promise<ScoringResult> {
@@ -119,8 +169,39 @@ class ScoringService {
     const submissionColumns = this.getSubmissionColumns(submission);
     console.log(`Evaluating submission with ${submissionColumns.length} columns:`, submissionColumns);
     
-    // Iterate through each submission attribute/column
+    // Process multiple_max questions first
+    const processedMultipleMaxColumns = new Set<string>();
+    for (const [baseColumn, group] of this.groupedMultipleMaxRules) {
+      const score = this.calculateMultipleMaxScore(group, submission);
+      const actualValues = this.extractMultipleMaxValues(submission, baseColumn);
+      
+      detailedResults.push({
+        column: baseColumn,
+        question: group.questionName,
+        section: group.section,
+        gender: group.genero,
+        omecPotential: group.potencial_omec,
+        expectedValue: `Máximo: ${group.maxPossibleScore}`,
+        actualValue: actualValues.join(', ') || 'No respondido',
+        score: score,
+        maxScore: group.maxPossibleScore,
+        type: 'multiple_max'
+      });
+
+      totalScore += score;
+      maxPossibleScore += group.maxPossibleScore;
+      processedMultipleMaxColumns.add(baseColumn);
+      
+      console.log(`Multiple max question ${baseColumn} scored: ${score}/${group.maxPossibleScore}`);
+    }
+    
+    // Process remaining questions (select and value types)
     for (const column of submissionColumns) {
+      // Skip if this column was already processed as part of a multiple_max group
+      if (processedMultipleMaxColumns.has(column)) {
+        continue;
+      }
+      
       // Find all rules that apply to this column
       const columnRules = this.getRulesForColumn(column);
       
@@ -192,6 +273,33 @@ class ScoringService {
     return result;
   }
 
+  private calculateMultipleMaxScore(group: GroupedMultipleMaxRule, submission: KoboToolBoxSubmission): number {
+    let totalScore = 0;
+    
+    for (const rule of group.rules) {
+      const actualValue = this.extractValue(submission, rule.column);
+      if (actualValue === rule.value) {
+        totalScore += rule.score;
+      }
+    }
+    
+    // Cap the score at the maximum possible score for this question group
+    return Math.min(totalScore, group.maxPossibleScore);
+  }
+
+  private extractMultipleMaxValues(submission: KoboToolBoxSubmission, baseColumn: string): string[] {
+    const values: string[] = [];
+    
+    for (const rule of this.groupedMultipleMaxRules.get(baseColumn)?.rules || []) {
+      const actualValue = this.extractValue(submission, rule.column);
+      if (actualValue === rule.value) {
+        values.push(rule.value);
+      }
+    }
+    
+    return values;
+  }
+
   private extractValue(submission: KoboToolBoxSubmission, column: string): string | null {
     // Try direct column access first
     if (submission[column] !== undefined && submission[column] !== null && submission[column] !== '') {
@@ -217,10 +325,8 @@ class ScoringService {
         return actualValue === rule.value ? rule.score : 0;
       
       case 'multiple_max':
-        // For multiple choice with max score
-        if (actualValue === rule.value) {
-          return rule.score;
-        }
+        // This should not be called directly anymore - handled by calculateMultipleMaxScore
+        console.warn(`Multiple max rule ${rule.column} should be handled by calculateMultipleMaxScore`);
         return 0;
       
       case 'value':
@@ -423,10 +529,30 @@ class ScoringService {
   }
 
   private getRulesForColumn(column: string): ScoringRule[] {
+    // For multiple_max questions, return the base column rules
+    const baseColumn = column.split('/')[0];
+    if (this.groupedMultipleMaxRules.has(baseColumn)) {
+      return this.groupedMultipleMaxRules.get(baseColumn)!.rules;
+    }
+    
     return this.scoringRules.filter(rule => rule.column === column);
   }
 
   private getRulesByType(type: ScoringRuleType): ScoringRule[] {
+    if (type === 'multiple_max') {
+      // Return one rule per group for multiple_max type
+      return Array.from(this.groupedMultipleMaxRules.values()).map(group => ({
+        column: group.baseColumn,
+        name: group.questionName,
+        section: group.section,
+        genero: group.genero,
+        potencial_omec: group.potencial_omec,
+        value: `Máximo: ${group.maxPossibleScore}`,
+        score: group.maxPossibleScore,
+        type: 'multiple_max'
+      }));
+    }
+    
     return this.scoringRules.filter(rule => rule.type === type);
   }
 
@@ -434,6 +560,7 @@ class ScoringService {
     totalRules: number;
     rulesByType: Record<ScoringRuleType, number>;
     rulesByColumn: Record<string, number>;
+    multipleMaxGroups: number;
   } {
     const rulesByType: Record<ScoringRuleType, number> = {
       select: 0,
@@ -451,8 +578,19 @@ class ScoringService {
     return {
       totalRules: this.scoringRules.length,
       rulesByType,
-      rulesByColumn
+      rulesByColumn,
+      multipleMaxGroups: this.groupedMultipleMaxRules.size
     };
+  }
+
+  // Get grouped multiple max rules for external use
+  getGroupedMultipleMaxRules(): Map<string, GroupedMultipleMaxRule> {
+    return new Map(this.groupedMultipleMaxRules);
+  }
+
+  // Get rules for a specific multiple max question group
+  getMultipleMaxRulesForColumn(baseColumn: string): GroupedMultipleMaxRule | undefined {
+    return this.groupedMultipleMaxRules.get(baseColumn);
   }
 
   validateScoringResult(result: ScoringResult): {
