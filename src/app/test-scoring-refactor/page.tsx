@@ -1,174 +1,47 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { scoringService, ScoringResult, GroupedMultipleMaxRule } from '../services/scoringService';
-import { KoboToolBoxSubmission } from '../services/koboToolBox';
+import { useEffect } from 'react';
+import { scoringService } from '../services/scoringService';
 
-export default function TestScoringRefactor() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [summary, setSummary] = useState<ReturnType<typeof scoringService.getScoringRulesSummary> | null>(null);
-  const [groupedRules, setGroupedRules] = useState<[string, GroupedMultipleMaxRule][] | null>(null);
-  const [testResult, setTestResult] = useState<ScoringResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // Mock submission data for testing multiple_max questions
-  const mockSubmission: KoboToolBoxSubmission = {
-    id: 'test-001',
-    '_0308_categ_otras/no_tiene': 'no_tiene',
-    '_0308_categ_otras/sitio_ramsar': 'sitio_ramsar',
-    '_0308_categ_otras/reserva_biosfera': 'reserva_biosfera',
-    '_0307_categ_princip': 'acus',
-    '_0309_tam_ha_001': '15000',
-    '_040502_num_guardabosq_x_ha': '3'
-  };
-
-  const loadScoringRules = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      await scoringService.loadScoringRules();
-      
-      const summaryData = scoringService.getScoringRulesSummary();
-      setSummary(summaryData);
-      
-      const groupedData = scoringService.getGroupedMultipleMaxRules();
-      setGroupedRules(Array.from(groupedData.entries()));
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const testEvaluation = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const result = await scoringService.evaluateSubmission(mockSubmission);
-      setTestResult(result);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+export default function TestScoringRefactorPage() {
   useEffect(() => {
-    loadScoringRules();
+    // Test the multiple_max scoring logic
+    scoringService.testMultipleMaxScoring();
   }, []);
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6">Test Scoring Service Refactor</h1>
-      
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          Error: {error}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Scoring Rules Summary */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Scoring Rules Summary</h2>
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : summary ? (
-            <div className="space-y-2">
-              <p><strong>Total Rules:</strong> {summary.totalRules}</p>
-              <p><strong>Rules by Type:</strong></p>
-              <ul className="ml-4 space-y-1">
-                <li>Select: {summary.rulesByType.select}</li>
-                <li>Multiple Max: {summary.rulesByType.multiple_max}</li>
-                <li>Value: {summary.rulesByType.value}</li>
-              </ul>
-              <p><strong>Multiple Max Groups:</strong> {summary.multipleMaxGroups}</p>
-            </div>
-          ) : (
-            <p>No summary available</p>
-          )}
-        </div>
-
-        {/* Multiple Max Rules Groups */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Multiple Max Rules Groups</h2>
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : groupedRules ? (
-            <div className="space-y-4">
-              {groupedRules.map(([baseColumn, group]) => (
-                <div key={baseColumn} className="border rounded p-3">
-                  <h3 className="font-medium text-blue-600">{baseColumn}</h3>
-                  <p><strong>Question:</strong> {group.questionName}</p>
-                  <p><strong>Max Score:</strong> {group.maxPossibleScore}</p>
-                  <p><strong>Rules:</strong> {group.rules.length}</p>
-                  <details className="mt-2">
-                    <summary className="cursor-pointer text-sm text-gray-600">Show individual rules</summary>
-                    <ul className="ml-4 mt-2 space-y-1 text-sm">
-                      {group.rules.map((rule, index) => (
-                        <li key={index}>
-                          {rule.column}: {rule.value} (score: {rule.score})
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No grouped rules available</p>
-          )}
-        </div>
-      </div>
-
-      {/* Test Evaluation */}
-      <div className="mt-6 bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Test Evaluation</h2>
-        <button
-          onClick={testEvaluation}
-          disabled={isLoading}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        >
-          {isLoading ? 'Testing...' : 'Test Submission Evaluation'}
-        </button>
-
-        {testResult && (
-          <div className="mt-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 p-3 rounded">
-                <p className="text-sm text-gray-600">Total Score</p>
-                <p className="text-2xl font-bold">{testResult.totalScore}</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded">
-                <p className="text-sm text-gray-600">Max Possible Score</p>
-                <p className="text-2xl font-bold">{testResult.maxPossibleScore}</p>
-              </div>
-              <div className="bg-gray-50 p-3 rounded">
-                <p className="text-sm text-gray-600">Percentage</p>
-                <p className="text-2xl font-bold">{testResult.percentage.toFixed(2)}%</p>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-2">Detailed Results</h3>
-              <div className="space-y-2">
-                {testResult.detailedResults.map((detail, index) => (
-                  <div key={index} className="border rounded p-3 text-sm">
-                    <p><strong>{detail.question}</strong> ({detail.type})</p>
-                    <p>Score: {detail.score}/{detail.maxScore}</p>
-                    <p>Column: {detail.column}</p>
-                    <p>Expected: {detail.expectedValue}</p>
-                    <p>Actual: {detail.actualValue}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Test de Lógica de Puntuación Multiple Max
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Esta página prueba la lógica de puntuación para preguntas de tipo multiple_max.
+          </p>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-blue-800 dark:text-blue-200 text-sm">
+              Abra la consola del navegador para ver los resultados de la prueba.
+            </p>
           </div>
-        )}
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Caso de Prueba: Pregunta 3.8
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
+              <strong>Pregunta:</strong> ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
+              <strong>Respuesta del usuario:</strong> "sitio_ramsar reserva_biosfera corredor_conservacion socio_bosque kba"
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
+              <strong>Opciones seleccionadas:</strong> 5 de 6 posibles
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
+              <strong>Puntuación esperada:</strong> 5/6
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

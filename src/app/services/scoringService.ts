@@ -79,47 +79,72 @@ class ScoringService {
 
   async loadScoringRules(): Promise<void> {
     try {
-      const response = await fetch('/api/csv-data');
+      // Try to determine if we're on the client or server side
+      let apiUrl = '/api/csv-data';
+      
+      // If we're on the client side, try to use the full URL
+      if (typeof window !== 'undefined') {
+        const baseUrl = window.location.origin;
+        apiUrl = `${baseUrl}/api/csv-data`;
+      }
+      
+      console.log('Loading scoring rules from:', apiUrl);
+      
+      const response = await fetch(apiUrl);
       if (!response.ok) {
-        throw new Error('Failed to load scoring rules');
+        throw new Error(`Failed to load scoring rules: ${response.status} ${response.statusText}`);
       }
       const rules = await response.json();
       
-      // Filter and validate rules
-      const validRules = rules.filter((rule: { column?: string; score?: string | number; type?: string }) => 
-        rule.column && 
-        rule.score !== undefined && 
-        rule.score !== '' &&
-        rule.type
-      ) as ScoringRule[];
-      
-      // Convert score to number if it's a string
-      this.scoringRules = validRules.map(rule => ({
-        ...rule,
-        score: typeof rule.score === 'string' ? parseFloat(rule.score) : rule.score
-      }));
-      
-      // Group multiple_max rules by base column name
-      this.groupMultipleMaxRules();
-      
-      // Check for potential duplicate rules
-      const columnCounts = new Map<string, number>();
-      for (const rule of this.scoringRules) {
-        columnCounts.set(rule.column, (columnCounts.get(rule.column) || 0) + 1);
-      }
-      
-      const duplicates = Array.from(columnCounts.entries()).filter(([_, count]) => count > 1);
-      if (duplicates.length > 0) {
-        console.warn('Warning: Found columns with multiple rules:', duplicates);
-      }
-      
-      console.log(`Loaded ${this.scoringRules.length} scoring rules`);
-      console.log(`Grouped ${this.groupedMultipleMaxRules.size} multiple_max question groups`);
-      console.log('Rules summary:', this.getScoringRulesSummary());
+      await this.processScoringRules(rules);
     } catch (error) {
       console.error('Error loading scoring rules:', error);
       throw error;
     }
+  }
+
+  async loadScoringRulesFromData(rules: Record<string, unknown>[]): Promise<void> {
+    try {
+      console.log('Loading scoring rules from provided data:', rules.length, 'rules');
+      await this.processScoringRules(rules);
+    } catch (error) {
+      console.error('Error loading scoring rules from data:', error);
+      throw error;
+    }
+  }
+
+  private async processScoringRules(rules: Record<string, unknown>[]): Promise<void> {
+    // Filter and validate rules
+    const validRules = rules.filter((rule: Record<string, unknown>) => 
+      rule.column && 
+      rule.score !== undefined && 
+      rule.score !== '' &&
+      rule.type
+    ) as unknown as ScoringRule[];
+    
+    // Convert score to number if it's a string
+    this.scoringRules = validRules.map(rule => ({
+      ...rule,
+      score: typeof rule.score === 'string' ? parseFloat(rule.score) : rule.score
+    }));
+    
+    // Group multiple_max rules by base column name
+    this.groupMultipleMaxRules();
+    
+    // Check for potential duplicate rules
+    const columnCounts = new Map<string, number>();
+    for (const rule of this.scoringRules) {
+      columnCounts.set(rule.column, (columnCounts.get(rule.column) || 0) + 1);
+    }
+    
+    const duplicates = Array.from(columnCounts.entries()).filter(([_, count]) => count > 1);
+    if (duplicates.length > 0) {
+      console.warn('Warning: Found columns with multiple rules:', duplicates);
+    }
+    
+    console.log(`Loaded ${this.scoringRules.length} scoring rules`);
+    console.log(`Grouped ${this.groupedMultipleMaxRules.size} multiple_max question groups`);
+    console.log('Rules summary:', this.getScoringRulesSummary());
   }
 
   private groupMultipleMaxRules(): void {
@@ -276,24 +301,67 @@ class ScoringService {
   private calculateMultipleMaxScore(group: GroupedMultipleMaxRule, submission: KoboToolBoxSubmission): number {
     let totalScore = 0;
     
+    // Get the base column value from the submission
+    const baseColumnValue = this.extractValue(submission, group.baseColumn);
+    if (!baseColumnValue) {
+      return 0;
+    }
+    
+    // Split the submission value into individual options (space-separated)
+    const selectedOptions = baseColumnValue.split(' ').filter(option => option.trim() !== '');
+    console.log(`Multiple max question ${group.baseColumn}: submission value="${baseColumnValue}", selected options=`, selectedOptions);
+    
     for (const rule of group.rules) {
-      const actualValue = this.extractValue(submission, rule.column);
-      if (actualValue === rule.value) {
+      // Extract the option name from the rule column (e.g., "sitio_ramsar" from "_0308_categ_otras/sitio_ramsar")
+      const optionName = rule.column.split('/').pop();
+      if (!optionName) continue;
+      
+      // Check if this option is selected in the submission
+      const isSelected = selectedOptions.includes(optionName);
+      console.log(`  Option ${optionName}: selected=${isSelected}, score=${rule.score}`);
+      
+      if (isSelected) {
         totalScore += rule.score;
       }
     }
     
     // Cap the score at the maximum possible score for this question group
-    return Math.min(totalScore, group.maxPossibleScore);
+    const finalScore = Math.min(totalScore, group.maxPossibleScore);
+    console.log(`Multiple max question ${group.baseColumn}: final score=${finalScore}/${group.maxPossibleScore}`);
+    
+    return finalScore;
   }
 
   private extractMultipleMaxValues(submission: KoboToolBoxSubmission, baseColumn: string): string[] {
     const values: string[] = [];
     
-    for (const rule of this.groupedMultipleMaxRules.get(baseColumn)?.rules || []) {
-      const actualValue = this.extractValue(submission, rule.column);
-      if (actualValue === rule.value) {
-        values.push(rule.value);
+    // Get the base column value from the submission
+    const baseColumnValue = this.extractValue(submission, baseColumn);
+    if (!baseColumnValue) {
+      return values;
+    }
+    
+    // Split the submission value into individual options (space-separated)
+    const selectedOptions = baseColumnValue.split(' ').filter(option => option.trim() !== '');
+    
+    // For each selected option, find the corresponding rule and add its display name
+    for (const optionName of selectedOptions) {
+      const group = this.groupedMultipleMaxRules.get(baseColumn);
+      if (group) {
+        // Find the rule that matches this option
+        const matchingRule = group.rules.find(rule => {
+          const ruleOptionName = rule.column.split('/').pop();
+          return ruleOptionName === optionName;
+        });
+        
+        if (matchingRule) {
+          // Use the rule's name as the display value, or the option name if no name is available
+          const displayValue = matchingRule.name || optionName;
+          values.push(displayValue);
+        } else {
+          // Fallback to the option name if no matching rule is found
+          values.push(optionName);
+        }
       }
     }
     
@@ -306,13 +374,23 @@ class ScoringService {
       return String(submission[column]);
     }
     
-    // If direct access fails, try to extract from nested structure
+    // If direct access fails, try to find the field by searching for partial matches
+    // This handles cases where the field name includes group prefixes
+    for (const [key, value] of Object.entries(submission)) {
+      if (key.endsWith(column) && value !== null && value !== undefined && value !== '') {
+        console.log(`Found field ${column} in submission key ${key} with value: ${value}`);
+        return String(value);
+      }
+    }
+    
+    // If still not found, try to extract from nested structure
     // Column name in submission might include category and group, extract the last value
     const lastValue = column.split('/').pop();
     if (lastValue && submission[lastValue] !== undefined && submission[lastValue] !== null && submission[lastValue] !== '') {
       return String(submission[lastValue]);
     }
     
+    console.log(`Field ${column} not found in submission. Available fields:`, Object.keys(submission).filter(k => k.includes(column.split('/').pop() || '')));
     return null;
   }
 
@@ -591,6 +669,101 @@ class ScoringService {
   // Get rules for a specific multiple max question group
   getMultipleMaxRulesForColumn(baseColumn: string): GroupedMultipleMaxRule | undefined {
     return this.groupedMultipleMaxRules.get(baseColumn);
+  }
+
+  // Test method for multiple_max scoring logic
+  testMultipleMaxScoring(): void {
+    console.log('Testing multiple_max scoring logic...');
+    
+    // Mock submission data for question 3.8
+    const mockSubmission = {
+      '_0308_categ_otras': 'sitio_ramsar reserva_biosfera corredor_conservacion socio_bosque kba'
+    } as unknown as KoboToolBoxSubmission;
+    
+    // Mock scoring rules for question 3.8
+    const mockRules: ScoringRule[] = [
+      {
+        column: '_0308_categ_otras/sitio_ramsar',
+        name: 'Sitio RAMSAR',
+        section: 'area_conservacion',
+        genero: '',
+        potencial_omec: '',
+        value: '',
+        score: 1,
+        type: 'multiple_max'
+      },
+      {
+        column: '_0308_categ_otras/reserva_biosfera',
+        name: 'Reserva de Biosfera',
+        section: 'area_conservacion',
+        genero: '',
+        potencial_omec: '',
+        value: '',
+        score: 1,
+        type: 'multiple_max'
+      },
+      {
+        column: '_0308_categ_otras/corredor_conservacion',
+        name: 'Corredor de Conservación',
+        section: 'area_conservacion',
+        genero: '',
+        potencial_omec: '',
+        value: '',
+        score: 1,
+        type: 'multiple_max'
+      },
+      {
+        column: '_0308_categ_otras/socio_bosque',
+        name: 'Socio Bosque',
+        section: 'area_conservacion',
+        genero: '',
+        potencial_omec: '',
+        value: '',
+        score: 1,
+        type: 'multiple_max'
+      },
+      {
+        column: '_0308_categ_otras/kba',
+        name: 'KBA',
+        section: 'area_conservacion',
+        genero: '',
+        potencial_omec: '',
+        value: '',
+        score: 1,
+        type: 'multiple_max'
+      },
+      {
+        column: '_0308_categ_otras/otras',
+        name: 'Otras',
+        section: 'area_conservacion',
+        genero: '',
+        potencial_omec: '',
+        value: '',
+        score: 1,
+        type: 'multiple_max'
+      }
+    ];
+    
+    // Create a mock group
+    const mockGroup: GroupedMultipleMaxRule = {
+      baseColumn: '_0308_categ_otras',
+      rules: mockRules,
+      maxPossibleScore: 6,
+      questionName: '3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?',
+      section: 'area_conservacion',
+      genero: '',
+      potencial_omec: ''
+    };
+    
+    // Test the scoring logic
+    const score = this.calculateMultipleMaxScore(mockGroup, mockSubmission);
+    const values = this.extractMultipleMaxValues(mockSubmission, '_0308_categ_otras');
+    
+    console.log('Test results:');
+    console.log('  Expected score: 5/6');
+    console.log('  Actual score:', score);
+    console.log('  Selected values:', values);
+    console.log('  Test passed:', score === 5);
   }
 
   validateScoringResult(result: ScoringResult): {

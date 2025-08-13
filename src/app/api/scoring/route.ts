@@ -1,6 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scoringService } from '../../services/scoringService';
 import { KoboToolBoxSubmission } from '../../services/koboToolBox';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { parse } from 'csv-parse/sync';
+
+// Load CSV data directly on the server side
+async function loadCSVData(): Promise<any[]> {
+  try {
+    const csvPath = path.join(process.cwd(), 'calculo_eem_omec.csv');
+    const csvContent = await fs.readFile(csvPath, 'utf-8');
+    
+    const records = parse(csvContent, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true
+    });
+
+    const validRecords = records.filter((record: unknown) => {
+      const rec = record as Record<string, unknown>;
+      return rec.column && 
+        rec.column !== 'start' && 
+        rec.column !== 'end' && 
+        rec.column !== 'today';
+    });
+
+    return validRecords;
+  } catch (error) {
+    console.error('Error reading CSV file:', error);
+    throw new Error('Error al leer el archivo CSV');
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,8 +70,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Load scoring rules
-    await scoringService.loadScoringRules();
+    // Load CSV data directly on the server side
+    const csvData = await loadCSVData();
+    
+    // Load scoring rules with the CSV data
+    await scoringService.loadScoringRulesFromData(csvData);
     
     // Evaluate submission
     const result = await scoringService.evaluateSubmission(submission);
