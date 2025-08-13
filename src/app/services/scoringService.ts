@@ -71,6 +71,14 @@ export interface DetailedResult {
   score: number;
   maxScore: number;
   type: string;
+  // Add detailed multiple max information
+  multipleMaxDetails?: Array<{
+    optionName: string;
+    displayName: string;
+    isSelected: boolean;
+    score: number;
+    column: string;
+  }>;
 }
 
 class ScoringService {
@@ -199,6 +207,7 @@ class ScoringService {
     for (const [baseColumn, group] of this.groupedMultipleMaxRules) {
       const score = this.calculateMultipleMaxScore(group, submission);
       const actualValues = this.extractMultipleMaxValues(submission, baseColumn);
+      const detailedInfo = this.getDetailedMultipleMaxInfo(submission, baseColumn);
       
       detailedResults.push({
         column: baseColumn,
@@ -210,7 +219,8 @@ class ScoringService {
         actualValue: actualValues.join(', ') || 'No respondido',
         score: score,
         maxScore: group.maxPossibleScore,
-        type: 'multiple_max'
+        type: 'multiple_max',
+        multipleMaxDetails: detailedInfo
       });
 
       totalScore += score;
@@ -366,6 +376,55 @@ class ScoringService {
     }
     
     return values;
+  }
+
+  // New method to get detailed information about multiple max options
+  private getDetailedMultipleMaxInfo(submission: KoboToolBoxSubmission, baseColumn: string): Array<{
+    optionName: string;
+    displayName: string;
+    isSelected: boolean;
+    score: number;
+    column: string;
+  }> {
+    const detailedInfo: Array<{
+      optionName: string;
+      displayName: string;
+      isSelected: boolean;
+      score: number;
+      column: string;
+    }> = [];
+    
+    const group = this.groupedMultipleMaxRules.get(baseColumn);
+    if (!group) {
+      return detailedInfo;
+    }
+    
+    // Get the base column value from the submission
+    const baseColumnValue = this.extractValue(submission, baseColumn);
+    const selectedOptions = baseColumnValue ? baseColumnValue.split(' ').filter(option => option.trim() !== '') : [];
+    
+    // Process each rule to show all options with their selection status
+    for (const rule of group.rules) {
+      const optionName = rule.column.split('/').pop() || '';
+      const isSelected = selectedOptions.includes(optionName);
+      
+      // Clean up the display name by removing the repetitive question text
+      let displayName = rule.name || optionName;
+      if (displayName.includes('/')) {
+        // Extract only the part after the last slash (the actual option name)
+        displayName = displayName.split('/').pop() || optionName;
+      }
+      
+      detailedInfo.push({
+        optionName,
+        displayName,
+        isSelected,
+        score: rule.score,
+        column: rule.column
+      });
+    }
+    
+    return detailedInfo;
   }
 
   private extractValue(submission: KoboToolBoxSubmission, column: string): string | null {

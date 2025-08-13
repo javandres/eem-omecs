@@ -121,6 +121,134 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
         </h5>
         {Array.from(groupedQuestions.entries()).map(([column, results]) => {
           const firstResult = results[0];
+          const questionKey = `${type}-${section}-${column}`;
+          const isCollapsed = collapsedQuestions.has(questionKey);
+
+          // Special handling for multiple_max questions
+          if (firstResult.type === 'multiple_max' && firstResult.multipleMaxDetails) {
+            return (
+              <div key={column} className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                {/* Question Header - Clickable to collapse/expand */}
+                <div 
+                  className="p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  onClick={() => toggleQuestion(questionKey)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h6 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
+                        {firstResult.question}
+                      </h6>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        Columna: <span className="font-mono">{column}</span>
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Tipo: <span className="font-medium">{firstResult.type}</span>
+                          {firstResult.section && ` • Sección: ${firstResult.section}`}
+                          {firstResult.gender && ` • Género: ${firstResult.gender}`}
+                          {firstResult.omecPotential && ` • Potencial OMEC: ${firstResult.omecPotential}`}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor((firstResult.score / firstResult.maxScore) * 100)}`}>
+                          Puntuación: {firstResult.score}/{firstResult.maxScore}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ml-4 flex items-center">
+                      <svg 
+                        className={`w-5 h-5 text-gray-500 transition-transform ${isCollapsed ? 'rotate-90' : '-rotate-90'}`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Collapsible Question Details for multiple_max */}
+                {!isCollapsed && (
+                  <div className="px-4 pb-4 space-y-3">
+                    {/* Summary section */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-blue-600 dark:text-blue-400">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </span>
+                          <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                            Resumen de Selección
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-bold text-blue-800 dark:text-blue-200">
+                            {firstResult.multipleMaxDetails.filter(opt => opt.isSelected).length} de {firstResult.multipleMaxDetails.length} opciones seleccionadas
+                          </span>
+                          <div className="text-xs text-blue-600 dark:text-blue-400">
+                            Puntuación: {firstResult.score}/{firstResult.maxScore} pts
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
+                      Opciones disponibles:
+                    </p>
+                    {firstResult.multipleMaxDetails.map((option, index) => (
+                      <div 
+                        key={index} 
+                        className={`p-3 rounded-lg border-2 transition-colors ${
+                          option.isSelected 
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' 
+                            : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className={`w-3 h-3 rounded-full ${
+                              option.isSelected 
+                                ? 'bg-emerald-500' 
+                                : 'bg-gray-300 dark:bg-gray-600'
+                            }`}></span>
+                            <span className={`text-sm ${
+                              option.isSelected 
+                                ? 'text-emerald-700 dark:text-emerald-300 font-medium' 
+                                : 'text-gray-600 dark:text-gray-400'
+                            }`}>
+                              {option.displayName}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <span className={`text-sm font-medium ${
+                              option.isSelected 
+                                ? 'text-emerald-700 dark:text-emerald-300' 
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {option.score} pts
+                            </span>
+                            {option.isSelected && (
+                              <span className="block text-xs text-emerald-600 dark:text-emerald-400">
+                                ✅ Seleccionada
+                              </span>
+                            )}
+                            {!option.isSelected && (
+                              <span className="block text-xs text-gray-500 dark:text-gray-400">
+                                ❌ No seleccionada
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Handle other question types (existing logic)
           const selectedResult = results.find(r => r.actualValue === r.expectedValue) || results[0];
           const allOptions = results.map(r => ({
             value: r.expectedValue,
@@ -132,9 +260,6 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
           
           // Calculate the true maximum score for this question (highest among all options)
           const questionMaxScore = Math.max(...results.map(r => r.maxScore));
-          
-          const questionKey = `${type}-${section}-${column}`;
-          const isCollapsed = collapsedQuestions.has(questionKey);
 
           return (
             <div key={column} className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -205,11 +330,6 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                           }`}>
                             {option.value}
                           </span>
-                          {/*option.isBest && (
-                            <span className="px-2 py-1 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">
-                              Mejor opción
-                            </span>
-                          )*/}
                         </div>
                         <div className="text-right">
                           <span className={`text-sm font-medium ${
