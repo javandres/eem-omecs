@@ -243,7 +243,6 @@ export default function LevantamientoPage() {
                     {transformedData.dateSubmitted}
                   </p>
                 </div>
-
               </div>
             </div>
           </div>
@@ -256,6 +255,15 @@ export default function LevantamientoPage() {
               Evaluación y Puntuación
             </h2>
             <div className="flex items-center space-x-3">
+              <Link 
+                href={`/levantamiento/${id}/detalles`}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 00.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Ver detalles del formulario
+              </Link>
               {scoringLoading && (
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-emerald-500" xmlns="http://http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
