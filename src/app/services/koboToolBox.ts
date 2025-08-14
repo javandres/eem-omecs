@@ -146,6 +146,92 @@ class KoboToolBoxService {
     }
   }
 
+  async getFormStructure(): Promise<Record<string, unknown>> {
+    try {
+      const url = `${this.baseURL}?action=form_structure`;
+
+      console.log('Fetching form structure from proxy URL:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Form structure:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching form structure:', error);
+      throw error;
+    }
+  }
+
+  async getFormXForm(): Promise<Record<string, unknown>> {
+    try {
+      const url = `${this.baseURL}?action=form_xform`;
+
+      console.log('Fetching form XForm from proxy URL:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Form XForm:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching form XForm:', error);
+      throw error;
+    }
+  }
+
+  async getFormExport(): Promise<Record<string, unknown> | null> {
+    try {
+      const url = `${this.baseURL}?action=form_export`;
+
+      console.log('Fetching form export from proxy URL:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.getHeaders(),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorData = JSON.parse(errorText);
+        
+        // Check if this is a graceful 404 response
+        if (errorData.error === 'endpoint_not_found') {
+          console.log('Form export endpoint not available in this Kobo version');
+          return null;
+        }
+        
+        console.error('Error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Form export:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching form export:', error);
+      throw error;
+    }
+  }
+
   // Test method to verify API connectivity
   async testConnection(): Promise<boolean> {
     try {
@@ -156,6 +242,18 @@ class KoboToolBoxService {
       // First try to get form details
       await this.getFormDetails();
       console.log('✅ Form details fetched successfully');
+
+      // Then try to get form structure
+      await this.getFormStructure();
+      console.log('✅ Form structure fetched successfully');
+
+      // Then try to get form XForm
+      await this.getFormXForm();
+      console.log('✅ Form XForm fetched successfully');
+
+      // Then try to get form export
+      await this.getFormExport();
+      console.log('✅ Form export fetched successfully');
 
       // Then try to get submissions
       await this.getSubmissions(1, 10);
