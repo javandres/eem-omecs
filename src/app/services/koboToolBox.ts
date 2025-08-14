@@ -44,6 +44,7 @@ export interface TransformedSubmission {
   id: string;
   title: string;
   date: string;
+  dateSubmitted: string;
   status: string;
   location: string;
   submittedBy: string;
@@ -181,6 +182,7 @@ class KoboToolBoxService {
       id: submission._uuid || submission.id,
       title: this.extractTitle(submission),
       date: submissionTime,
+      dateSubmitted: submissionTime,
       status: this.determineStatus(submission),
       location: this.extractLocation(submission),
       submittedBy: this.extractUserName(submission),

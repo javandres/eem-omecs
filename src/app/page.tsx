@@ -99,14 +99,14 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
 
-              {/* WWF Icon */}
-              <div className="w-15 h-15 bg-white dark:bg-gray-700  flex items-center justify-center ">
-                <img 
-                  src="/logo_wwf.png" 
-                  alt="WWF Logo" 
-                  className="w-14 h-14 object-contain"
-                />
-              </div>
+                              {/* WWF Icon */}
+                <div className="w-16 h-16 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center shadow-sm">
+                  <img 
+                    src="/logo_wwf.png" 
+                    alt="WWF Logo" 
+                    className="w-12 h-12 object-contain"
+                  />
+                </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">EEM OMEC – Ecuador</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Herramienta de Evaluación de la Efectividad de Manejo de Áreas de Conservación con visión OMEC – Ecuador</p>
