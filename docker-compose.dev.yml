@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  eem-omecs-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: eem-omecs-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      # Mount source code for hot reloading
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./calculo_eem_omec.csv:/app/calculo_eem_omec.csv:ro
+    restart: unless-stopped
+    networks:
+      - eem-omecs-dev-network
+    command: npm run dev
+
+networks:
+  eem-omecs-dev-network:
+    driver: bridge

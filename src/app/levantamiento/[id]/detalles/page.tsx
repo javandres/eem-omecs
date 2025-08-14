@@ -53,10 +53,8 @@ export default function DetallesLevantamientoPage() {
         setError(null);
         
         // Fetch submission data first
-        const submissionData = await koboToolBoxService.getSubmissionById(id);
-        setLevantamiento(submissionData);
-        
-        console.log('Submission data:', submissionData);
+                const submissionData = await koboToolBoxService.getSubmissionById(id);
+                setLevantamiento(submissionData);
         
         // Try multiple endpoints to get form structure
         let formStructure: any = null;
@@ -67,40 +65,28 @@ export default function DetallesLevantamientoPage() {
           formStructure = await koboToolBoxService.getFormExport();
           if (formStructure) {
             currentEndpoint = 'form_export';
-            console.log('✅ Form export successful:', formStructure);
           } else {
-            console.log('⚠️ Form export not available, trying form_structure...');
             throw new Error('Form export not available');
           }
         } catch (error) {
-          console.log('❌ Form export failed, trying form_structure...');
           try {
             formStructure = await koboToolBoxService.getFormStructure();
             currentEndpoint = 'form_structure';
-            console.log('✅ Form structure successful:', formStructure);
           } catch (error2) {
-            console.log('❌ Form structure failed, trying form_xform...');
             try {
               formStructure = await koboToolBoxService.getFormXForm();
               currentEndpoint = 'form_xform';
-              console.log('✅ Form XForm successful:', formStructure);
             } catch (error3) {
-              console.log('❌ All endpoints failed, using fallback');
               formStructure = null;
             }
           }
         }
-        
-        console.log('Endpoint used:', currentEndpoint);
-        console.log('Form structure raw:', formStructure);
         
         setEndpointUsed(currentEndpoint);
         setFormStructure(formStructure as Record<string, FormField>);
         
         // Transform submission data into questions and answers with form structure
         const transformedQuestions = transformSubmissionToQuestions(submissionData, formStructure);
-        console.log('Transformed questions:', transformedQuestions);
-        console.log('Number of questions:', transformedQuestions.length);
         setQuestions(transformedQuestions);
       } catch (err) {
         console.error('Error fetching levantamiento details:', err);
@@ -117,9 +103,6 @@ export default function DetallesLevantamientoPage() {
 
   const transformSubmissionToQuestions = (submission: KoboToolBoxSubmission, formStructure: any): QuestionAnswer[] => {
     const questions: QuestionAnswer[] = [];
-    
-    console.log('Form structure received:', formStructure);
-    console.log('Submission data:', submission);
     
     // Define question mappings for known fields
     const questionMappings: Record<string, { question: string; inputType: string; group: string; choices?: Array<{ label: string; name: string }> }> = {
@@ -534,11 +517,8 @@ export default function DetallesLevantamientoPage() {
     
     // Process each field
     Object.entries(submission).forEach(([fieldName, value]) => {
-      console.log('Processing field:', fieldName, 'with value:', value);
-      
       // Skip internal Kobo fields
       if (fieldName.startsWith('_') && !fieldName.includes('/')) {
-        console.log('Skipping internal field:', fieldName);
         return;
       }
 
@@ -578,7 +558,6 @@ export default function DetallesLevantamientoPage() {
       questions.push(question);
     });
 
-    console.log('Mapped questions created:', questions);
     return questions;
   };
 
@@ -1024,22 +1003,7 @@ export default function DetallesLevantamientoPage() {
           </div>
         </div>
 
-        {/* Debug Info */}
-        {(() => {
-          const groupedQuestions = getGroupedQuestions();
-          return (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
-              <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                <p><strong>Debug Info:</strong></p>
-                <p>Total questions: {questions.length}</p>
-                <p>Groups: {Object.keys(groupedQuestions).length}</p>
-                <p>Groups: {Object.keys(groupedQuestions).join(', ')}</p>
-                <p>Form structure: {formStructure ? 'Available' : 'Not available'}</p>
-                <p>Endpoint used: {endpointUsed}</p>
-              </div>
-            </div>
-          );
-        })()}
+
 
         {/* Questions and Answers by Group */}
         {(() => {
