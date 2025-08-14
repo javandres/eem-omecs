@@ -46,6 +46,15 @@ export default function TestAPIPage() {
           addResult(`Formulario: ${data.name || 'Sin nombre'} (${data.uid})`);
         } else if (action === 'submission') {
           addResult(`Envío individual obtenido: ${data._uuid || 'Sin UUID'}`);
+        } else if (action === 'form_xform') {
+          if (data.source === 'html_response') {
+            addResult(`✅ XForm HTML procesado correctamente: ${data.message}`);
+            if (data.xml_content) {
+              addResult(`📋 Contenido XML extraído (primeros 100 chars): ${data.xml_content.substring(0, 100)}...`);
+            }
+          } else {
+            addResult(`✅ XForm obtenido: ${data.xml_content ? 'Contenido XML disponible' : 'Sin contenido XML'}`);
+          }
         }
       } else {
         const errorText = await response.text();
@@ -87,6 +96,7 @@ export default function TestAPIPage() {
         addResult('--- Probando Proxy KoboToolBox ---');
         await testKoboToolBoxProxy('form');
         await testKoboToolBoxProxy('submissions', { page: '1', pageSize: '3' });
+        await testKoboToolBoxProxy('form_xform');
       }
       
       if (selectedTest === 'all' || selectedTest === 'mock') {
@@ -216,6 +226,13 @@ export default function TestAPIPage() {
                 className="w-full bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 🎭 Probar Mock Data
+              </button>
+              
+              <button
+                onClick={() => testKoboToolBoxProxy('form_xform')}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                📋 Probar XForm (HTML)
               </button>
             </div>
           </div>

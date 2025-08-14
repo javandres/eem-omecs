@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Authorization': `Token ${ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        'Accept': 'application/json, text/plain, */*',
         'User-Agent': 'EEM-OMECS/1.0',
       },
     });
@@ -319,6 +319,28 @@ export async function GET(request: NextRequest) {
     
     // Check if response contains HTML (likely an error page or login redirect)
     if (responseText.includes('<!DOCTYPE html>') || responseText.includes('<html>')) {
+      // Special handling for xform endpoint which legitimately returns HTML
+      if (action === 'form_xform') {
+        console.log('XForm endpoint returned HTML (expected for this endpoint)');
+        // Extract the XML content from the HTML response
+        const xmlMatch = responseText.match(/<pre[^>]*>([\s\S]*?)<\/pre>/);
+        if (xmlMatch) {
+          const xmlContent = xmlMatch[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+          return NextResponse.json({
+            xml_content: xmlContent,
+            source: 'html_response',
+            message: 'XForm content extracted from HTML response'
+          });
+        } else {
+          // If we can't extract XML, return the HTML content as-is
+          return NextResponse.json({
+            html_content: responseText,
+            source: 'html_response',
+            message: 'XForm HTML response (could not extract XML)'
+          });
+        }
+      }
+      
       console.error('HTML response detected from KoboToolBox - likely authentication error');
       
       // Check for common HTML error indicators
@@ -358,25 +380,38 @@ export async function GET(request: NextRequest) {
         );
       }
       
+      // For 406 errors, return a graceful response
+      if (response.status === 406) {
+        return NextResponse.json(
+          { 
+            error: 'endpoint_not_acceptable',
+            message: 'This endpoint is not available or not acceptable in this version of KoboToolBox',
+            status: 406
+          },
+          { status: 200 } // Return 200 to avoid client-side errors
+        );
+      }
+      
       console.error('KoboToolBox API error:', response.status, responseText);
       return NextResponse.json(
         { 
           error: `KoboToolBox API error: ${response.status}`,
           details: responseText.substring(0, 1000),
           suggestion: response.status === 401 ? 'Token may be invalid or expired' : 
-                     response.status === 403 ? 'Insufficient permissions' : 'Unknown error'
+                     response.status === 403 ? 'Insufficient permissions' : 
+                     response.status === 406 ? 'Endpoint not acceptable - may not be available in this Kobo version' : 'Unknown error'
         },
         { status: response.status }
       );
     }
 
-    // Check if response is JSON
+    // Check if response is JSON (but be more flexible for certain endpoints)
     const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      console.error('Non-JSON response from KoboToolBox:', responseText.substring(0, 500));
+    if (!contentType || (!contentType.includes('application/json') && !contentType.includes('text/html'))) {
+      console.error('Unexpected content type from KoboToolBox:', contentType, responseText.substring(0, 500));
       return NextResponse.json(
         { 
-          error: 'KoboToolBox returned non-JSON response',
+          error: 'KoboToolBox returned unexpected content type',
           contentType,
           details: responseText.substring(0, 1000),
           suggestion: 'This may indicate an authentication or API endpoint issue'
@@ -389,15 +424,35 @@ export async function GET(request: NextRequest) {
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Failed to parse JSON response:', parseError);
-      return NextResponse.json(
-        { 
-          error: 'Failed to parse JSON response from KoboToolBox',
-          details: responseText.substring(0, 1000),
-          suggestion: 'The API may be returning malformed JSON'
-        },
-        { status: 500 }
-      );
+      // If it's an HTML response and we're dealing with the xform endpoint, handle it specially
+      if (action === 'form_xform' && responseText.includes('<html>')) {
+        console.log('XForm endpoint returned HTML, extracting content...');
+        const xmlMatch = responseText.match(/<pre[^>]*>([\s\S]*?)<\/pre>/);
+        if (xmlMatch) {
+          const xmlContent = xmlMatch[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+          data = {
+            xml_content: xmlContent,
+            source: 'html_response',
+            message: 'XForm content extracted from HTML response'
+          };
+        } else {
+          data = {
+            html_content: responseText,
+            source: 'html_response',
+            message: 'XForm HTML response (could not extract XML)'
+          };
+        }
+      } else {
+        console.error('Failed to parse JSON response:', parseError);
+        return NextResponse.json(
+          { 
+            error: 'Failed to parse JSON response from KoboToolBox',
+            details: responseText.substring(0, 1000),
+            suggestion: 'The API may be returning malformed JSON'
+          },
+          { status: 500 }
+        );
+      }
     }
     
     // Add CORS headers

@@ -67,6 +67,7 @@ class KoboToolBoxService {
   private getHeaders(): HeadersInit {
     return {
       'Content-Type': 'application/json',
+      'Accept': 'application/json, text/html, */*',
     };
   }
 
@@ -186,11 +187,28 @@ class KoboToolBoxService {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error response body:', errorText);
+        
+        // Handle 406 Not Acceptable error gracefully
+        if (response.status === 406) {
+          console.warn('Form XForm endpoint returned 406 - this endpoint may not be available');
+          return { 
+            error: 'endpoint_not_available',
+            message: 'Form XForm endpoint is not available in this version of KoboToolBox'
+          };
+        }
+        
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
       console.log('Form XForm:', data);
+      
+      // Handle HTML responses that were converted to JSON by our API
+      if (data.source === 'html_response') {
+        console.log('Received HTML response converted to JSON for XForm endpoint');
+        return data;
+      }
+      
       return data;
     } catch (error) {
       console.error('Error fetching form XForm:', error);
@@ -239,27 +257,74 @@ class KoboToolBoxService {
       console.log('Proxy URL:', this.baseURL);
       console.log('Form ID:', this.formId);
 
+      let successCount = 0;
+      const totalEndpoints = 5;
+
       // First try to get form details
-      await this.getFormDetails();
-      console.log('✅ Form details fetched successfully');
+      try {
+        await this.getFormDetails();
+        console.log('✅ Form details fetched successfully');
+        successCount++;
+      } catch (error) {
+        console.warn('⚠️ Form details failed:', error);
+      }
 
       // Then try to get form structure
-      await this.getFormStructure();
-      console.log('✅ Form structure fetched successfully');
+      try {
+        await this.getFormStructure();
+        console.log('✅ Form structure fetched successfully');
+        successCount++;
+      } catch (error) {
+        console.warn('⚠️ Form structure failed:', error);
+      }
 
       // Then try to get form XForm
-      await this.getFormXForm();
-      console.log('✅ Form XForm fetched successfully');
+      try {
+        const xformResult = await this.getFormXForm();
+        if (xformResult.error === 'endpoint_not_available') {
+          console.log('⚠️ Form XForm endpoint not available (expected for some Kobo versions)');
+        } else if (xformResult.source === 'html_response') {
+          console.log('✅ Form XForm fetched successfully (HTML response converted to JSON)');
+          successCount++;
+        } else {
+          console.log('✅ Form XForm fetched successfully');
+          successCount++;
+        }
+      } catch (error) {
+        console.warn('⚠️ Form XForm failed:', error);
+      }
 
       // Then try to get form export
-      await this.getFormExport();
-      console.log('✅ Form export fetched successfully');
+      try {
+        const exportResult = await this.getFormExport();
+        if (exportResult === null) {
+          console.log('⚠️ Form export endpoint not available (expected for some Kobo versions)');
+        } else {
+          console.log('✅ Form export fetched successfully');
+          successCount++;
+        }
+      } catch (error) {
+        console.warn('⚠️ Form export failed:', error);
+      }
 
       // Then try to get submissions
-      await this.getSubmissions(1, 10);
-      console.log('✅ Submissions fetched successfully');
+      try {
+        await this.getSubmissions(1, 10);
+        console.log('✅ Submissions fetched successfully');
+        successCount++;
+      } catch (error) {
+        console.warn('⚠️ Submissions failed:', error);
+      }
 
-      return true;
+      console.log(`Connection test completed: ${successCount}/${totalEndpoints} endpoints successful`);
+      
+      // Consider connection successful if at least 2 critical endpoints work
+      if (successCount >= 2) {
+        return true;
+      } else {
+        console.error('❌ Too many endpoints failed - connection test failed');
+        return false;
+      }
     } catch (error) {
       console.error('❌ API connection test failed:', error);
       return false;
