@@ -104,8 +104,8 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Áreas Naturales Protegidas</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Sistema de Monitoreo Ambiental</p>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">EEM OMEC – Ecuador</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Herramienta de Evaluación de la Efectividad de Manejo de Áreas de Conservación con visión OMEC – Ecuador</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -116,7 +116,7 @@ export default function Home() {
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 00.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Ver CSV
+                Ver matriz de evaluación
               </Link>
               <button 
                 onClick={refreshData}
@@ -146,7 +146,7 @@ export default function Home() {
             Bienvenido al Dashboard
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Monitoreo en tiempo real de las áreas naturales protegidas
+                El propósito de esta herramienta es medir y fortalecer la efectividad del manejo de áreas de conservación gestionadas por diversos actores —incluidos pueblos y nacionalidades indígenas, comunidades locales, organizaciones de la sociedad civil, sector privado y gobiernos locales, que aspiran a ser reconocidas como Otras Medidas Efectivas de Conservación basadas en áreas (OMEC), según los criterios establecidos por el Convenio sobre la Diversidad Biológica (CDB).
           </p>
         </div>
 
@@ -207,7 +207,7 @@ export default function Home() {
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Levantamientos KoboToolBox</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Levantamientos</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {loading ? 'Cargando datos...' : `Formularios de información recopilados (${submissions.length} total)`}
                 </p>

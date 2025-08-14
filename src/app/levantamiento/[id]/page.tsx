@@ -134,8 +134,8 @@ export default function LevantamientoPage() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Áreas Naturales Protegidas</h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Sistema de Monitoreo Ambiental</p>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">EEM OMEC – Ecuador</h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Herramienta de Evaluación de la Efectividad de Manejo de Áreas de Conservación con visión OMEC – Ecuador</p>
                 </div>
               </Link>
             </div>
@@ -147,7 +147,7 @@ export default function LevantamientoPage() {
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                Volver al Dashboard
+                Volver
               </Link>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function LevantamientoPage() {
           <ol className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
             <li>
               <Link href="/" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-                Dashboard
+                Inicio
               </Link>
             </li>
             <li>
@@ -214,6 +214,7 @@ export default function LevantamientoPage() {
                     {transformedData.submittedBy}
                   </p>
                 </div>
+
               </div>
             </div>
           </div>

@@ -175,7 +175,7 @@ export default function CSVViewer() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500 mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-2">Cargando datos...</h2>
-            <p className="text-gray-600 dark:text-gray-400">Por favor espera mientras se cargan los datos del CSV</p>
+            <p className="text-gray-600 dark:text-gray-400">Por favor espera mientras se cargan los datos de la matriz de evaluación</p>
           </div>
         </div>
       </div>
@@ -220,8 +220,8 @@ export default function CSVViewer() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Volver al Dashboard</h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Áreas Naturales Protegidas</p>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Regresar a EEM OMEC – Ecuador</h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Herramienta de Evaluación de la Efectividad de Manejo de Áreas de Conservación con visión OMEC – Ecuador</p>
                 </div>
               </Link>
             </div>
@@ -245,14 +245,11 @@ export default function CSVViewer() {
         {/* Title Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Visualizador de CSV - Cálculo EEM OMEC
+            Visualizador de matriz de evaluación EEM OMEC
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Explorador de la herramienta de evaluación para Otras Medidas Efectivas de Conservación
-            <br />
-            <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-              Mostrando solo preguntas con sección asignada
-            </span>
+            Explorador de la matriz de evaluación y los parámetros de evaluación para calcular el score para levantamientos de areas que aspiran a ser reconocidas como Otras Medidas Efectivas de Conservación
+            
           </p>
         </div>
 
