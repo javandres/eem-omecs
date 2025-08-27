@@ -1,0 +1,217 @@
+column,name,section,genero,potencial_omec,value,score,type
+start,start,,,,,,
+end,end,,,,,,
+today,today,,,,,,
+CONSENT_INF_01,"En el contexto actual de la conservación de la biodiversidad, es fundamental contar con mecanismos que aseguren no solo la protección de los ecosistemas, sino también la efectividad de su gestión a largo plazo. En Ecuador, país megadiverso y comprometido con los objetivos globales de conservación, surge la necesidad de fortalecer y reconocer los esfuerzos de conservación más allá de las áreas protegidas oficialmente establecidas.",,,,,,
+CONSENT_INF_02,"Esta herramienta de evaluación esta en una fase piloto, que ha sido desarrollada con el propósito de medir y fortalecer la efectividad del manejo de áreas de conservación gestionadas por diversos actores —incluidos pueblos y nacionalidades indígenas, comunidades locales, organizaciones de la sociedad civil, sector privado y gobiernos locales, que aspiran a ser reconocidas como Otras Medidas Efectivas de Conservación basadas en áreas (OMEC), según los criterios establecidos por el Convenio sobre la Diversidad Biológica (CDB).",,,,,,
+CONSENT_INF_03,"A través de un enfoque participativo, técnico y adaptado a la realidad nacional, esta herramienta permite identificar fortalezas, oportunidades de mejora y acciones prioritarias para garantizar que estas áreas contribuyan de manera efectiva a la conservación in situ de la biodiversidad. Asimismo, facilita la toma de decisiones informadas, promueve la gobernanza inclusiva y respalda los compromisos internacionales del Ecuador en materia de conservación y sostenibilidad.",,,,,,
+CONSENT_INF_04,"Este instrumento no solo busca evaluar, sino también reconocer y visibilizar los esfuerzos de conservación que se llevan a cabo fuera del sistema nacional de áreas protegidas, impulsando su integración como parte clave del mosaico nacional de conservación.",,,,,,
+CONSENT_INF_06,Su participación es totalmente voluntaria. Llenar este cuestionario le tomará aproximadamente X minutos.,,,,,,
+Acepto_participar_en_do_este_cuestionario,Acepto participar en la herramienta de evaluación llenando este cuestionario.,,,,,,
+_0102_name,1.1. Por favor indique su nombre y apellido,,,,,,
+_0102_genero,1.2. ¿Con qué género se identifica?,,,,,,
+_0103_etnia,1.3 Por favor indique su auto identificación étnica,,,,,,
+_0104_org,1.4. Institución o Comunidad a la que representa,,,,,,
+_0105_cargo_001,1.5. Definición del puesto de trabajo en relación con el Área,,,,,,
+_0201_fecha_ev,2.1. Fecha en la que se realizó la evaluación (día/mes/año),,,,,,
+_0202_metodo_encuesta,2.2. Método para aplicar la evaluación,,,,,,
+_0203_num_participantes,2.3. Número de personas que participan en la evaluación,,,,,,
+_0204_num_mujeres,2.4. Representación de género,,,,,,
+_0205_rango_edad,2.5. Rango edad de participantes,,,,,,
+_0205_rango_edad/menos_18,2.5. Rango edad de participantes/Menor a 18,,,,,,
+_0205_rango_edad/18_24,2.5. Rango edad de participantes/18 años a 24 años,,,,,,
+_0205_rango_edad/25_34,2.5. Rango edad de participantes/25 años a 34 años,,,,,,
+_0205_rango_edad/35_44,2.5. Rango edad de participantes/35 años a 44 años,,,,,,
+_0205_rango_edad/45_54,2.5. Rango edad de participantes/45 años a 54 años,,,,,,
+_0205_rango_edad/mas_54,2.5. Rango edad de participantes/Mas de 54,,,,,,
+_0206_inst_org_participantes,2.6. Instituciones y/o comunidades de los participantes,,,,,,
+_0301_pais,3.1. País donde se ubica el Área,,,,,,
+_0302_provincia,3.2. Provincia donde se ubica el Área,,,,,,
+_0303_canton,3.3. Cantón donde se ubica el Área,,,,,,
+_0304_parroquia,3.4. Parroquia donde se ubica el Área,,,,,,
+_0305_nombre_aconserv,3.5. Nombre Oficial del Área de Conservación,,,,,,
+_0306_fecha_designacion,3.6 Fecha de designación o reconocimiento del Área de Conservación como tal,,,,,,
+_0307_categ_princip,3.7. ¿Qué categoría principal de Conservación aplica al Área?,area_conservacion,,,sin_categoria,0,select
+_0307_categ_princip,3.7. ¿Qué categoría principal de Conservación aplica al Área?,area_conservacion,,,acus,1,select
+_0307_categ_princip,3.7. ¿Qué categoría principal de Conservación aplica al Área?,area_conservacion,,,bosque_protector,1,select
+_0307_categ_princip,3.7. ¿Qué categoría principal de Conservación aplica al Área?,area_conservacion,,,area_conservacion_privada,1,select
+_0307_categ_princip,3.7. ¿Qué categoría principal de Conservación aplica al Área?,area_conservacion,,,area_comunitaria,1,select
+_0307_categ_princip,3.7. ¿Qué categoría principal de Conservación aplica al Área?,area_conservacion,,,custodio_manglar,1,select
+_0307_categ_princip,3.7. ¿Qué categoría principal de Conservación aplica al Área?,area_conservacion,,,otra,1,select
+_0308_categ_otras,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?,area_conservacion,,,,,multiple_max
+_0308_categ_otras/no_tiene,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?/No tiene otra categoría de conservación,area_conservacion,,,,0,multiple_max
+_0308_categ_otras/sitio_ramsar,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?/Sitio RAMSAR,area_conservacion,,,,1,multiple_max
+_0308_categ_otras/reserva_biosfera,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?/Reserva de Biosfera,area_conservacion,,,,1,multiple_max
+_0308_categ_otras/corredor_conservacion,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?/Corredor de Conservación,area_conservacion,,,,1,multiple_max
+_0308_categ_otras/socio_bosque,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?/Socio Bosque,area_conservacion,,,,1,multiple_max
+_0308_categ_otras/kba,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?/KBA,area_conservacion,,,,1,multiple_max
+_0308_categ_otras/otras,3.8. ¿Qué otras categorías nacionales o internacionales de conservación pueden aplicarse al Área?/Otras,area_conservacion,,,,1,multiple_max
+_0309_tam_ha_001,3.9. Tamaño del Área,area_conservacion,,,,,value
+_0310_ubicacion_mapa_001,3.10. Ubicación en mapa (Coordenadas-shape-mapa),,,,,,
+__0310_ubicacion_mapa_001_latitude,,,,,,,
+__0310_ubicacion_mapa_001_longitude,,,,,,,
+__0310_ubicacion_mapa_001_altitude,,,,,,,
+__0310_ubicacion_mapa_001_precision,,,,,,,
+_031002_archivo_limites,,,,,,,
+_031002_archivo_limites_URL,,,,,,,
+_0311_tipo_gobernanza,3.11. Tipo de Gobernanza,,,,,,
+_0312_tenencia,3.12. Estado de la tenencia/propiedad de la tierra en el Área,area_conservacion,,x,total,2,select
+_0312_tenencia,3.12. Estado de la tenencia/propiedad de la tierra en el Área,area_conservacion,,x,parcial,1,select
+_0312_tenencia,3.12. Estado de la tenencia/propiedad de la tierra en el Área,area_conservacion,,x,ninguna,0,select
+_031301_tenencia_docs,3.13.01. ¿Cuenta con documentos que demuestren la tenencia de la tierra?,area_conservacion,,x,si,1,select
+_031301_tenencia_docs,3.13.01. ¿Cuenta con documentos que demuestren la tenencia de la tierra?,area_conservacion,,x,no,0,select
+_031302_tenencia_docs,3.13.02 Especifique si cuenta con documentos que muestren la propiedad o tenencia de la tierra dentro del Área,,,,,,
+_0401_estruc_gobrnza,4.1. Estructura de gobernanza,gestion,,x,si,2,select
+_0401_estruc_gobrnza,4.1. Estructura de gobernanza,gestion,,x,en_proceso,1,select
+_0401_estruc_gobrnza,4.1. Estructura de gobernanza,gestion,,x,no,0,select
+_0402_presencia_mujeres_001,4.2. Estimación de presencia de mujeres y hombres que conforman la estructura de gestión,gestion,x,,mayoria_mujeres,3,select
+_0402_presencia_mujeres_001,4.2. Estimación de presencia de mujeres y hombres que conforman la estructura de gestión,gestion,x,,muj_hom_igual,2,select
+_0402_presencia_mujeres_001,4.2. Estimación de presencia de mujeres y hombres que conforman la estructura de gestión,gestion,x,,mujeres_menos,1,select
+_0402_presencia_mujeres_001,4.2. Estimación de presencia de mujeres y hombres que conforman la estructura de gestión,gestion,x,,mujeres_no,0,select
+_040301_nombre_admin,4.3.1 ¿Quién cumple la función de Gestor(a) Principal - Gerente -Administrador(a) de la Gestión del Área?,,,,,,
+_040302_genero_admin,4.3.2. ¿Género de quién Gestor(a) Principal - Gerente -Administrador(a) de la Gestión del Área?,,,,,,
+_040401_prog_manejo,4.4.1. ¿Cuenta con programas de manejo?,gestion,,,si,1,select
+_040401_prog_manejo,4.4.1. ¿Cuenta con programas de manejo?,gestion,,,no,0,select
+_040402_prog_manejo_cual,4.4.2. Especifique el tipo de programa de manejo con el que cuenta,,,,,,
+_040502_num_guardabosq_x_ha,4.5.1. ¿Con cuántos Guardabosques cuenta el Área?,gestion,,,,,value
+_040502_muj_guardabosq,4.5.2. Estimación de mujeres Guardabosques,gestion,x,,mujeres_mas,3,
+_040502_muj_guardabosq,4.5.2. Estimación de mujeres Guardabosques,gestion,x,,mujeres_hombres_igual,2,
+_040502_muj_guardabosq,4.5.2. Estimación de mujeres Guardabosques,gestion,x,,mujeres_menos,1,
+_040502_muj_guardabosq,4.5.2. Estimación de mujeres Guardabosques,gestion,x,,mujeres_no,0,
+_040601_tecncs_num_001,4.6.1. ¿Con cuántos Técnicos cuenta el Área?,gestion,,,mas_de_tres,2,select
+_040601_tecncs_num_001,4.6.1. ¿Con cuántos Técnicos cuenta el Área?,gestion,,,uno_a_tres,1,select
+_040601_tecncs_num_001,4.6.1. ¿Con cuántos Técnicos cuenta el Área?,gestion,,,no,0,select
+_040602_muj_tec,4.6.2. Estimación de presencia de mujeres y hombres entre Técnicos,gestion,x,,mayoria_mujeres,3,select
+_040602_muj_tec,4.6.2. Estimación de presencia de mujeres y hombres entre Técnicos,gestion,x,,mujeres_hombres_igual,2,select
+_040602_muj_tec,4.6.2. Estimación de presencia de mujeres y hombres entre Técnicos,gestion,x,,minoria_mujeres,1,select
+_040602_muj_tec,4.6.2. Estimación de presencia de mujeres y hombres entre Técnicos,gestion,x,,sin_mujeres,0,select
+_0407_presupuesto_anual_asigna,4.7. Presupuesto anual asignado al Área,gestion,,x,mas_15k,3,select
+_0407_presupuesto_anual_asigna,4.7. Presupuesto anual asignado al Área,gestion,,x,5_15k,2,select
+_0407_presupuesto_anual_asigna,4.7. Presupuesto anual asignado al Área,gestion,,x,menos_5k,1,select
+_0407_presupuesto_anual_asigna,4.7. Presupuesto anual asignado al Área,gestion,,x,no,0,select
+_040801_equipos,4.8.1. Los equipos y materiales para gestión del Área son:,gestion,,,abundantes,3,select
+_040801_equipos,4.8.1. Los equipos y materiales para gestión del Área son:,gestion,,,suficientes,2,select
+_040801_equipos,4.8.1. Los equipos y materiales para gestión del Área son:,gestion,,,insuficientes,1,select
+_040801_equipos,4.8.1. Los equipos y materiales para gestión del Área son:,gestion,,,ninguno,0,select
+_040802_equipos_decsrip,"4.8.2. Describir los equipos y materiales con los que cuenta el Área,",,,,,,
+_040901_infrst,4.9.1. La infraestructura con la que cuenta el Área es:,gestion,,,existente,2,select
+_040901_infrst,4.9.1. La infraestructura con la que cuenta el Área es:,gestion,,,en_construccion,1,select
+_040901_infrst,4.9.1. La infraestructura con la que cuenta el Área es:,gestion,,,inexistente,0,select
+_040902_infrst_descrp,4.9.2. Describir la infraestructura con la que cuenta el Área,,,,,,
+_041010_comunic,4.10.1 ¿El Área cuenta con medios de comunicación entre el personal?,gestion,,,si,1,select
+_041010_comunic,4.10.1 ¿El Área cuenta con medios de comunicación entre el personal?,gestion,,,no,0,select
+_041002_med_comunic,4.10.2. Describa los medios con los que cuenta el Área para la comunicación entre el personal.,,,,,,
+_041101_protocolos_actuacion,4.11.1. El Área cuenta con protocolos de actuación:,gestion,,,si,1,select
+_041101_protocolos_actuacion,4.11.1. El Área cuenta con protocolos de actuación:,gestion,,,no,0,select
+_041102_Nombre_los_protocolos,4.11.2. Nombre los protocolos de actuación con los que cuenta el Área,,,,,,
+_0412_plan_manejo,4.12. ¿El Área cuenta o no cuenta con un Plan de Manejo?,gestion,,,si,1,select
+_0412_plan_manejo,4.12. ¿El Área cuenta o no cuenta con un Plan de Manejo?,gestion,,,no,0,select
+_0413_plan_manejo_estado,"4.13. El Plan de Manejo es actual, está:",gestion,,,en_implementacion,3,select
+_0413_plan_manejo_estado,"4.13. El Plan de Manejo es actual, está:",gestion,,,en_actualizacion,2,select
+_0413_plan_manejo_estado,"4.13. El Plan de Manejo es actual, está:",gestion,,,en_creacion,1,select
+_0413_plan_manejo_estado,"4.13. El Plan de Manejo es actual, está:",gestion,,,desactualizado,0,select
+_041401_apoyo,4.14.1 Señale el tipo de apoyo que recibe el Área,gestion,,x,apoyo_tecnico_financiero,2,select
+_041401_apoyo,4.14.1 Señale el tipo de apoyo que recibe el Área,gestion,,x,apoyo_tecnico,1,select
+_041401_apoyo,4.14.1 Señale el tipo de apoyo que recibe el Área,gestion,,x,apoyo_financiero,1,select
+_041401_apoyo,4.14.1 Señale el tipo de apoyo que recibe el Área,gestion,,x,sin_apoyo,0,select
+_041402_tipo_inst_apoyo,4.14.2. ¿De qué institución(es) u organización(es) recibe apoyo el Área?,,,,,,
+_0415_particip_comunit,4.15. ¿Hay participación comunitaria en la gestión del Área y los procesos son inclusivos y transparentes?,gestion,,,participacion_alta,4,select
+_0415_particip_comunit,4.15. ¿Hay participación comunitaria en la gestión del Área y los procesos son inclusivos y transparentes?,gestion,,,participacion_media,3,select
+_0415_particip_comunit,4.15. ¿Hay participación comunitaria en la gestión del Área y los procesos son inclusivos y transparentes?,gestion,,,participacion_baja,2,select
+_0415_particip_comunit,4.15. ¿Hay participación comunitaria en la gestión del Área y los procesos son inclusivos y transparentes?,gestion,,,sin_participacion,0,select
+_0416_comun_locales_apoyo,"4.16. Describa que comunidades, grupos, asociaciones u organizaciones locales apoyan la gestión del área",,,,,,
+_041701_org_mujeres_001,"4.17.1 ¿Hay algún grupo, asociación u organización específica de mujeres que se relacione con el área?",gestion,x,,si,1,select
+_041701_org_mujeres_001,"4.17.1 ¿Hay algún grupo, asociación u organización específica de mujeres que se relacione con el área?",gestion,x,,no,0,select
+_041702_org_mujeres,"4.17.2 Indique el o los nombre de las asociaciones involucradas grupo, asociación u organización específica de mujeres que se relacione con el área",,,,,,
+_0418_conocimiento_area,"4.18. Describa en que nivel de conocimiento y respeto sobre los límites, zonas y actividades permitidas del Área por parte de los miembros de la comunidad y otros actores",gestion,,,alto,3,select
+_0418_conocimiento_area,"4.18. Describa en que nivel de conocimiento y respeto sobre los límites, zonas y actividades permitidas del Área por parte de los miembros de la comunidad y otros actores",gestion,,,medio,2,select
+_0418_conocimiento_area,"4.18. Describa en que nivel de conocimiento y respeto sobre los límites, zonas y actividades permitidas del Área por parte de los miembros de la comunidad y otros actores",gestion,,,bajo,1,select
+_0418_conocimiento_area,"4.18. Describa en que nivel de conocimiento y respeto sobre los límites, zonas y actividades permitidas del Área por parte de los miembros de la comunidad y otros actores",gestion,,,no_conocen,0,select
+_0418_conocimiento_area,"4.18. Describa en que nivel de conocimiento y respeto sobre los límites, zonas y actividades permitidas del Área por parte de los miembros de la comunidad y otros actores",gestion,,,no_respetan,0,select
+_0419_particip_comunid_calidad,4.19. ¿Hay participación con equidad de genero en la toma de decisiones dentro del Área?,gestion,x,,particip_alta,4,select
+_0419_particip_comunid_calidad,4.19. ¿Hay participación con equidad de genero en la toma de decisiones dentro del Área?,gestion,x,,particip_media,3,select
+_0419_particip_comunid_calidad,4.19. ¿Hay participación con equidad de genero en la toma de decisiones dentro del Área?,gestion,x,,particip_baja,1,select
+_0419_particip_comunid_calidad,4.19. ¿Hay participación con equidad de genero en la toma de decisiones dentro del Área?,gestion,x,,particip_no,0,select
+_0420_acceso_comunid,"4.20. ¿Las comunidades tienen acceso a los recursos naturales del Área, garantizando el reconocimiento y respeto de sus derechos fundamentales?",gestion,x,x,acceso_regulado,4,select
+_0420_acceso_comunid,"4.20. ¿Las comunidades tienen acceso a los recursos naturales del Área, garantizando el reconocimiento y respeto de sus derechos fundamentales?",gestion,x,x,acceso_irregulado,3,select
+_0420_acceso_comunid,"4.20. ¿Las comunidades tienen acceso a los recursos naturales del Área, garantizando el reconocimiento y respeto de sus derechos fundamentales?",gestion,x,x,acceso_conflictivo,2,select
+_0420_acceso_comunid,"4.20. ¿Las comunidades tienen acceso a los recursos naturales del Área, garantizando el reconocimiento y respeto de sus derechos fundamentales?",gestion,x,x,acceso_no,0,select
+_042101_mecanismo_resoluc_conf,4.21.1. ¿Existen mecanismos específicos para resolver conflictos por el uso de los recursos naturales?,gestion,x,x,si,1,select
+_042101_mecanismo_resoluc_conf,4.21.1. ¿Existen mecanismos específicos para resolver conflictos por el uso de los recursos naturales?,gestion,x,x,no,0,select
+_042102_mecanismo_resoluc_conf_001,"4.21.2. Describa si los procesos, medios o mecanismos para resolución de conflictos por el uso de los recursos naturales del área",,,,,,
+_0422_mecanismo_acceso_recursos,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,x,,ordenado,1,select
+_0422_mecanismo_acceso_recursos,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,x,,desordenado,0,select
+_0422_mecanismo_acceso_recursos,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,x,,no_hay,0,select
+_0422_acceso_recursos,4.22.2 Describa el mecanismo mediante el cual se decide el acceso a los recursos naturales en el Área,,,,,,
+_050101_objetivos_conserv_area,5.1.1. Indique si el Área de Conservación cuenta con objetivos del manejo,caracteristicas_area,,,si,1,select
+_050101_objetivos_conserv_area,5.1.1. Indique si el Área de Conservación cuenta con objetivos del manejo,caracteristicas_area,,,no,0,select
+_050102_Describa_los_objetivos,5.1.2. Describa los objetivos del manejo con los que cuenta el Área de Conservación:,,,,,,
+_0502_valores_area,5.2. Describa cuales son los principales valores (bióticos o culturales) de conservación del Área (Filtro Fino y Filtro Grueso),,,,,,
+_050301_estado_valores,"5.3.1 Indique el estado de los valores de conservación del Área, en relación con las amenazas que los presionan.",caracteristicas_area,,x,conservados,3,select
+_050301_estado_valores,"5.3.1 Indique el estado de los valores de conservación del Área, en relación con las amenazas que los presionan.",caracteristicas_area,,x,presionado,2,select
+_050301_estado_valores,"5.3.1 Indique el estado de los valores de conservación del Área, en relación con las amenazas que los presionan.",caracteristicas_area,,x,en_declive,1,select
+_050301_estado_valores,"5.3.1 Indique el estado de los valores de conservación del Área, en relación con las amenazas que los presionan.",caracteristicas_area,,x,no_evaluados,0,select
+_050302_valores_monitoreados,5.3.2 Indique si los valores de conservación del Área son monitoriados o no,caracteristicas_area,,x,si,1,select
+_050302_valores_monitoreados,5.3.2 Indique si los valores de conservación del Área son monitoriados o no,caracteristicas_area,,x,no,0,select
+_050401_estado_especies,5.4.1 Indique si existen especies de la biodiversidad claves en el Área,caracteristicas_area,,x,si,1,select
+_050401_estado_especies,5.4.1 Indique si existen especies de la biodiversidad claves en el Área,caracteristicas_area,,x,no,0,select
+_050402_especies_monitoreadas,5.4.2 Indique si las especies clave del Área son monitoriados o no,caracteristicas_area,,,si,1,select
+_050402_especies_monitoreadas,5.4.2 Indique si las especies clave del Área son monitoriados o no,caracteristicas_area,,,no,0,select
+_5_4_3_Especifique_la_ncuentran_en_el_rea,5.4.3 Especifique las especies claves que se encuentran en el Área,,,,,,
+_0505_ecosistemas_principales,5.5. Describa e indique la proporción de Ecosistemas principales en el Área,,,,,,
+_050601_ecosistemas_fragiles,"5.6.1 Indique si en Área hay presencia de Ecosistemas frágiles como: Páramo, Manglar, Bosque seco, u otro considerado en la legislación como tal",caracteristicas_area,,x,si,1,select
+_050601_ecosistemas_fragiles,"5.6.1 Indique si en Área hay presencia de Ecosistemas frágiles como: Páramo, Manglar, Bosque seco, u otro considerado en la legislación como tal",caracteristicas_area,,x,no,0,select
+_050602_ecosistemas_fragiles,"5.6.2 Describa que tipo o tipos de Ecosistemas frágiles como: Páramo, Manglar, Bosque seco, u otro considerado en la legislación como tal existen en el Área",,,,,,
+_0507_zonificacion,5.7. Indique si el Área cuenta con una zonificación,caracteristicas_area,,,si,1,select
+_0507_zonificacion,5.7. Indique si el Área cuenta con una zonificación,caracteristicas_area,,,no,0,select
+_0508_tipos_de_areas,5.8. Describa que tipos de zonificación existen en el Área,,,,,,
+_050901_actividades_permitidas,5.9.1 Describa que actividades están permitidas en el Área y si hay un control sobre las actividades permitidas,,,,,,
+_050902_actividades_monitoread,5.9.2. Indique si estas actividades son o no monitoreadas,,,,,,
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,,,alto,3,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,,,medio,2,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,,,bajo,1,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,,,no_sabe,0,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,,,no,0,select
+_051002_tipo_investigacion,5.10.2. Describa el tipo o tipos de investigación que se realizan en el Área,,,,,,
+_051003_particip_gen_inv,5.10.3 Estime la participación diferenciada por género en las actividades de Investigación,caracteristicas_area,x,,mas_mujeres_prod,3,select
+_051003_particip_gen_inv,5.10.3 Estime la participación diferenciada por género en las actividades de Investigación,caracteristicas_area,x,,igual_mujeres_hombres_prod,2,select
+_051003_particip_gen_inv,5.10.3 Estime la participación diferenciada por género en las actividades de Investigación,caracteristicas_area,x,,menos_mujeres_prod,1,select
+_051003_particip_gen_inv,5.10.3 Estime la participación diferenciada por género en las actividades de Investigación,caracteristicas_area,x,,no_mujeres_prod,0,select
+_0511_turismo_nivel,5.11. Seleccione el nivel de actividad turística que se realiza en el Área,caracteristicas_area,,,alto,3,select
+_0511_turismo_nivel,5.11. Seleccione el nivel de actividad turística que se realiza en el Área,caracteristicas_area,,,medio,,
+_0511_turismo_nivel,5.11. Seleccione el nivel de actividad turística que se realiza en el Área,caracteristicas_area,,,bajo,,
+_0511_turismo_nivel,5.11. Seleccione el nivel de actividad turística que se realiza en el Área,caracteristicas_area,,,no_sabe,2,select
+_0511_turismo_nivel,5.11. Seleccione el nivel de actividad turística que se realiza en el Área,caracteristicas_area,,,no,1,select
+_051102_tipo_turismo,5.11.2. Describa el tipo o tipos de actividad turística que se realizan en el Área,,,,,,
+_051113_particip_gen_turismo,5.11.3 Estime la participación diferenciada por género en las actividades de Turismo,caracteristicas_area,x,,mas_mujeres_prod,3,select
+_051113_particip_gen_turismo,5.11.3 Estime la participación diferenciada por género en las actividades de Turismo,caracteristicas_area,x,,igual_mujeres_hombres_prod,2,select
+_051113_particip_gen_turismo,5.11.3 Estime la participación diferenciada por género en las actividades de Turismo,caracteristicas_area,x,,menos_mujeres_prod,1,select
+_051113_particip_gen_turismo,5.11.3 Estime la participación diferenciada por género en las actividades de Turismo,caracteristicas_area,x,,no_mujeres_prod,0,select
+_0512_produccion_nivel,5.12. Seleccione el nivel de actividad productiva que se realiza en el Área,caracteristicas_area,,,alto,3,select
+_0512_produccion_nivel,5.12. Seleccione el nivel de actividad productiva que se realiza en el Área,caracteristicas_area,,,medio,2,select
+_0512_produccion_nivel,5.12. Seleccione el nivel de actividad productiva que se realiza en el Área,caracteristicas_area,,,bajo,1,select
+_0512_produccion_nivel,5.12. Seleccione el nivel de actividad productiva que se realiza en el Área,caracteristicas_area,,,no_sabe,0,select
+_0512_produccion_nivel,5.12. Seleccione el nivel de actividad productiva que se realiza en el Área,caracteristicas_area,,,no,0,select
+_051202_tipo_produccion,5.12.2 Describa el tipo o tipos de actividad productiva que se realizan en el Área,caracteristicas_area,,,,,
+_051203_particip_gen_produc,5.12.3 Estime la participación diferenciada por género en las actividades de Producción ,caracteristicas_area,x,,mas_mujeres_prod,3,select
+_051203_particip_gen_produc,5.12.3 Estime la participación diferenciada por género en las actividades de Producción ,caracteristicas_area,x,,igual_mujeres_hombres_prod,2,select
+_051203_particip_gen_produc,5.12.3 Estime la participación diferenciada por género en las actividades de Producción ,caracteristicas_area,x,,menos_mujeres_prod,1,select
+_051203_particip_gen_produc,5.12.3 Estime la participación diferenciada por género en las actividades de Producción ,caracteristicas_area,x,,no_mujeres_prod,0,select
+_051401_distribucion_beneficio,5.14.1 Indique si la distribución de los beneficios generados por turismo y producción según el género es:,caracteristicas_area,,,equitativa,2,select
+_051401_distribucion_beneficio,5.14.1 Indique si la distribución de los beneficios generados por turismo y producción según el género es:,caracteristicas_area,,,desconocida,1,select
+_051401_distribucion_beneficio,5.14.1 Indique si la distribución de los beneficios generados por turismo y producción según el género es:,caracteristicas_area,,,inequitativa,0,select
+_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,x,,prc_mujeres_ayoritario,3,select
+_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,x,,prc_igual_hombres_mujeres,2,select
+_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,x,,prc_mujeres_minoritario,1,select
+_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,x,,prc_nada_mujeres,0,select
+Gracias_por_su_tiemp_de_reas_protegidas,"Gracias por su tiempo, sus respuestas serán muy valiosas para reconocer y visibilizar los esfuerzos de conservación que se llevan a cabo fuera del sistema nacional de áreas protegidas",,,,,,
+_id,_id,,,,,,
+_uuid,_uuid,,,,,,
+_submission_time,_submission_time,,,,,,
+_validation_status,_validation_status,,,,,,
+_notes,_notes,,,,,,
+_status,_status,,,,,,
+_submitted_by,_submitted_by,,,,,,
+__version__,__version__,,,,,,
+_tags,_tags,,,,,,
+_index,_index,,,,,,

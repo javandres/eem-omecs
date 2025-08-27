@@ -7,6 +7,7 @@ interface CSVRow {
   column: string;
   name: string;
   section: string;
+  eem: string;
   genero: string;
   potencial_omec: string;
   value: string;
@@ -18,6 +19,7 @@ interface GroupedRow {
   column: string;
   name: string;
   section: string;
+  eem: string;
   genero: string;
   potencial_omec: string;
   maxScore: number;
@@ -31,11 +33,6 @@ export default function CSVViewer() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterSection, setFilterSection] = useState('');
-  const [filterGenero, setFilterGenero] = useState('');
-  const [filterPotencialOme, setFilterPotencialOme] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [isClient, setIsClient] = useState(false);
 
@@ -110,6 +107,7 @@ export default function CSVViewer() {
         column,
         name: firstRow.name,
         section: firstRow.section,
+        eem: firstRow.eem,
         genero: firstRow.genero,
         potencial_omec: firstRow.potencial_omec,
         maxScore,
@@ -126,32 +124,6 @@ export default function CSVViewer() {
       processAndGroupData();
     }
   }, [csvData, processAndGroupData]);
-
-  // Computed values - only calculate when data is loaded and component is hydrated
-  const filteredData = isClient && !loading ? groupedData.filter(row => {
-    const matchesSearch = !searchTerm || 
-      row.column.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.section.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesSection = !filterSection || row.section === filterSection;
-    const matchesGenero = !filterGenero || row.genero === filterGenero;
-    const matchesPotencialOme = !filterPotencialOme || row.potencial_omec === filterPotencialOme;
-    
-    return matchesSearch && matchesSection && matchesGenero && matchesPotencialOme;
-  }) : [];
-
-  const uniqueSections = isClient && !loading ? [...new Set(groupedData.map(row => row.section).filter(Boolean))] : [];
-  
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentData = filteredData.slice(startIndex, endIndex);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const toggleRowExpansion = (column: string) => {
     const newExpandedRows = new Set(expandedRows);
@@ -232,7 +204,7 @@ export default function CSVViewer() {
                 title="Actualizar datos"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
             </div>
@@ -249,42 +221,13 @@ export default function CSVViewer() {
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
             Explorador de la matriz de evaluación y los parámetros de evaluación para calcular el score para levantamientos de areas que aspiran a ser reconocidas como Otras Medidas Efectivas de Conservación
-            
           </p>
         </div>
 
-        {/* Stats Card */}
+        {/* Search Bar */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{groupedData.length}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total de Preguntas</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                {uniqueSections.length}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Secciones</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                {groupedData.filter(row => row.type && row.type !== '').length}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Tipos Definidos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {groupedData.filter(row => row.maxScore > 0).length}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Con Puntaje</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
               <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Buscar en campos
               </label>
@@ -297,396 +240,463 @@ export default function CSVViewer() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
               />
             </div>
-            
-            <div>
-              <label htmlFor="section" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtrar por Sección
-              </label>
-              <select
-                id="section"
-                value={filterSection}
-                onChange={(e) => setFilterSection(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+            <div className="flex items-end">
+              <button 
+                onClick={fetchCSVData}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center space-x-2"
+                title="Actualizar datos"
               >
-                <option value="">Todas las secciones</option>
-                {uniqueSections.map((section) => (
-                  <option key={section} value={section}>{section}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="genero" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtrar por Género
-              </label>
-              <select
-                id="genero"
-                value={filterGenero}
-                onChange={(e) => setFilterGenero(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Todos los géneros</option>
-                {[...new Set(groupedData.map(row => row.genero).filter(Boolean))].map((genero) => (
-                  <option key={genero} value={genero}>{genero}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="potencialOme" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Filtrar por Potencial OMEC
-              </label>
-              <select
-                id="potencialOme"
-                value={filterPotencialOme}
-                onChange={(e) => setFilterPotencialOme(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Todos los potenciales</option>
-                {[...new Set(groupedData.map(row => row.potencial_omec).filter(Boolean))].map((potencial) => (
-                  <option key={potencial} value={potencial}>{potencial}</option>
-                ))}
-              </select>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.001 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>Actualizar</span>
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Results Summary */}
+        {/* EEM Section */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-8">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Resumen de Resultados</h3>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {filteredData.length} de {groupedData.length} preguntas
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Evaluación de Efectividad de Manejo (EEM)</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Preguntas relacionadas con la evaluación de efectividad de manejo</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            {/* EEM Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
                 <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {filteredData.reduce((total, row) => total + row.maxScore, 0).toFixed(2)}
+                  {groupedData.filter(row => row.eem === 'x').length}
                 </div>
-                <div className="text-sm text-emerald-700 dark:text-emerald-300">Puntaje Total</div>
+                <div className="text-sm text-emerald-700 dark:text-emerald-300">Total Preguntas</div>
               </div>
-              
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {filteredData.filter(row => row.type === 'multiple_max').length}
+              <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {groupedData.filter(row => row.eem === 'x').reduce((sum, row) => sum + row.maxScore, 0)}
                 </div>
-                <div className="text-sm text-blue-700 dark:text-blue-300">Preguntas de suma múltiple</div>
+                <div className="text-sm text-emerald-700 dark:text-emerald-300">Puntaje Máximo Total</div>
               </div>
-              
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {filteredData.filter(row => row.type !== 'multiple_max' && row.maxScore > 0).length}
+              <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {groupedData.filter(row => row.eem === 'x' && row.type === 'multiple_max').length}
                 </div>
-                <div className="text-sm text-purple-700 dark:text-purple-300">Preguntas de puntaje máximo</div>
+                <div className="text-sm text-emerald-700 dark:text-emerald-300">Preguntas Múltiples</div>
               </div>
-              
-              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {filteredData.filter(row => row.maxScore === 0).length}
-                </div>
-                <div className="text-sm text-orange-700 dark:text-orange-300">Sin puntaje asignado</div>
+            </div>
+          </div>
+          
+          {/* EEM Questions List */}
+          <div className="p-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Lista de Preguntas EEM</h4>
+            <div className="space-y-3">
+              {groupedData
+                .filter(row => row.eem === 'x')
+                .filter(row => !searchTerm || 
+                  row.column.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  row.section.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((row, index) => (
+                  <div key={`eem-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-mono text-gray-600 dark:text-gray-400">{row.column}</span>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            row.maxScore > 0 
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                          }`}>
+                            {row.maxScore > 0 ? `Puntaje: ${row.maxScore}` : 'Sin puntaje'}
+                          </span>
+                          {row.type && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                              {row.type}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-900 dark:text-white mb-2">{row.name}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            {row.section}
+                          </span>
+                          {row.genero && row.genero.trim() !== '' && row.genero !== 'N/A' && (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                              Género: {row.genero}
+                            </span>
+                          )}
+                          {row.potencial_omec && row.potencial_omec.trim() !== '' && row.potencial_omec !== 'N/A' && (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                              Potencial OMEC: {row.potencial_omec}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => toggleRowExpansion(`eem-${row.column}`)}
+                        className="ml-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <svg 
+                          className={`w-5 h-5 transition-transform ${expandedRows.has(`eem-${row.column}`) ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Expanded EEM Question Details */}
+                    {expandedRows.has(`eem-${row.column}`) && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <h5 className="font-medium text-gray-900 dark:text-white mb-3">Opciones disponibles:</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {csvData
+                            .filter(csvRow => {
+                              if (row.type === 'multiple_max') {
+                                return csvRow.column.startsWith(row.column + '/') || csvRow.column === row.column;
+                              } else {
+                                return csvRow.column === row.column;
+                              }
+                            })
+                            .map((option, optionIndex) => (
+                              <div 
+                                key={optionIndex} 
+                                className="bg-white dark:bg-gray-600 rounded-lg p-3 border border-gray-200 dark:border-gray-500"
+                              >
+                                <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                                  {option.column.includes('/') ? option.column.split('/')[1] : option.column}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                  {option.name}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    option.score && parseFloat(option.score) > 0
+                                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                                  }`}>
+                                    Puntaje: {option.score || '0'}
+                                  </span>
+                                  {option.value && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      Valor: {option.value}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Género Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Género</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Preguntas relacionadas con aspectos de género</p>
               </div>
             </div>
             
-            {/* Detalles adicionales */}
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                  {filteredData.filter(row => row.type === 'multiple_max').length}
+            {/* Género Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {groupedData.filter(row => row.genero && row.genero.trim() !== '' && row.genero !== 'N/A').length}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Preguntas de suma múltiple
-                </div>
+                <div className="text-sm text-purple-700 dark:text-purple-300">Total Preguntas</div>
               </div>
-              <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-                  {filteredData.filter(row => row.type !== 'multiple_max' && row.maxScore > 0).length}
+              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {groupedData.filter(row => row.genero && row.genero.trim() !== '' && row.genero !== 'N/A').reduce((sum, row) => sum + row.maxScore, 0)}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Preguntas de puntaje máximo
-                </div>
+                <div className="text-sm text-purple-700 dark:text-purple-300">Puntaje Máximo Total</div>
               </div>
-              <div className="text-center p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                <div className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-                  {filteredData.filter(row => row.maxScore === 0).length}
+              <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {groupedData.filter(row => row.genero && row.genero.trim() !== '' && row.genero !== 'N/A' && row.type === 'multiple_max').length}
                 </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
-                  Sin puntaje asignado
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Datos del CSV Agrupados por Pregunta</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Mostrando {filteredData.length} de {groupedData.length} preguntas con sección asignada
-                  <br />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    • Puntaje máximo: Para preguntas de selección única
-                    • Puntaje suma: Para preguntas de tipo multiple_max (múltiples opciones agrupadas por pregunta principal)
-                  </span>
-                  <br />
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                    💡 Haz clic en cualquier fila para ver las opciones disponibles
-                  </span>
-                </p>
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Página {currentPage} de {totalPages}
+                <div className="text-sm text-purple-700 dark:text-purple-300">Preguntas Múltiples</div>
               </div>
             </div>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Columna
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Nombre
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Sección y Metadatos
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Puntaje (Máx/Suma)
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Opciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {currentData.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                      No se encontraron resultados con los filtros aplicados
-                    </td>
-                  </tr>
-                ) : (
-                  currentData.map((row, index) => (
-                    <React.Fragment key={`${row.column}-${index}`}>
-                      <tr 
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                        onClick={() => toggleRowExpansion(row.column)}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <div className="text-sm font-mono text-gray-900 dark:text-white">
-                              {row.column}
-                            </div>
-                            <svg 
-                              className={`w-4 h-4 text-gray-400 transition-transform ${expandedRows.has(row.column) ? 'rotate-180' : ''}`} 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate" title={row.name}>
-                            {row.name}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-2">
-                            {/* Sección principal */}
-                            <div className="flex items-center">
-                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                {row.section}
-                              </span>
-                            </div>
-                            
-                            {/* Chips de género y potencial OMEC */}
-                            <div className="flex flex-wrap gap-1">
-                              {row.genero && row.genero.trim() !== '' && row.genero !== 'N/A' && (
-                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
-                                  Género: {row.genero}
-                                </span>
-                              )}
-                              
-                              {row.potencial_omec && row.potencial_omec.trim() !== '' && row.potencial_omec !== 'N/A' && (
-                                <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                                  Potencial OMEC: {row.potencial_omec}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center space-x-2">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              row.maxScore > 0 
-                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                            }`}>
-                              {row.maxScore > 0 ? row.maxScore : 'N/A'}
-                            </span>
-                            {row.type === 'multiple_max' && (
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                </svg>
-                                Suma
-                              </span>
-                            )}
-                            {row.rowCount > 1 && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                ({row.rowCount} opciones)
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+          {/* Género Questions List */}
+          <div className="p-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Lista de Preguntas de Género</h4>
+            <div className="space-y-3">
+              {groupedData
+                .filter(row => row.genero && row.genero.trim() !== '' && row.genero !== 'N/A')
+                .filter(row => !searchTerm || 
+                  row.column.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  row.section.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((row, index) => (
+                  <div key={`genero-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-mono text-gray-600 dark:text-gray-400">{row.column}</span>
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            row.type ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                            row.maxScore > 0 
+                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
                           }`}>
-                            {row.type || 'N/A'}
+                            {row.maxScore > 0 ? `Puntaje: ${row.maxScore}` : 'Sin puntaje'}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {row.type === 'multiple_max' ? (
-                              <div className="space-y-1">
-                                <div className="font-medium text-gray-700 dark:text-gray-300">
-                                  {row.rowCount} opciones agrupadas
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  Pregunta principal: {row.column}
-                                </div>
-                              </div>
-                            ) : (
-                              <div>
-                                {row.rowCount} {row.rowCount === 1 ? 'opción' : 'opciones'}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                      
-                      {/* Fila expandida con detalles */}
-                      {expandedRows.has(row.column) && (
-                        <tr className="bg-gray-50 dark:bg-gray-800/50">
-                          <td colSpan={6} className="px-6 py-4">
-                            <div className="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                              <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                                Opciones disponibles para: {row.column}
-                              </h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {csvData
-                                  .filter(csvRow => {
-                                    if (row.type === 'multiple_max') {
-                                      // Para preguntas multiple_max, mostrar todas las opciones que empiecen con la pregunta principal
-                                      return csvRow.column.startsWith(row.column + '/') || csvRow.column === row.column;
-                                    } else {
-                                      // Para otras preguntas, mostrar solo las que coincidan exactamente
-                                      return csvRow.column === row.column;
-                                    }
-                                  })
-                                  .map((option, optionIndex) => (
-                                    <div 
-                                      key={optionIndex} 
-                                      className="bg-gray-50 dark:bg-gray-600 rounded-lg p-3 border border-gray-200 dark:border-gray-500"
-                                    >
-                                      <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                                        {option.column.includes('/') ? option.column.split('/')[1] : option.column}
-                                      </div>
-                                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                                        {option.name}
-                                      </div>
-                                      <div className="flex items-center justify-between">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                          option.score && parseFloat(option.score) > 0
-                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
-                                        }`}>
-                                          Puntaje: {option.score || '0'}
-                                        </span>
-                                        {option.value && (
-                                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                                            Valor: {option.value}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  Mostrando {startIndex + 1} a {Math.min(endIndex, filteredData.length)} de {filteredData.length} resultados
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Anterior
-                  </button>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`px-3 py-1 text-sm rounded ${
-                          currentPage === pageNum
-                            ? 'bg-emerald-500 text-white'
-                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                        }`}
+                          {row.type && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                              {row.type}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-900 dark:text-white mb-2">{row.name}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            {row.section}
+                          </span>
+                          {row.eem && row.eem.trim() !== '' && row.eem !== 'N/A' && (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                              EEM: {row.eem}
+                            </span>
+                          )}
+                          {row.potencial_omec && row.potencial_omec.trim() !== '' && row.potencial_omec !== 'N/A' && (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                              Potencial OMEC: {row.potencial_omec}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => toggleRowExpansion(`genero-${row.column}`)}
+                        className="ml-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                       >
-                        {pageNum}
+                        <svg 
+                          className={`w-5 h-5 transition-transform ${expandedRows.has(`genero-${row.column}`) ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                       </button>
-                    );
-                  })}
-                  <button 
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Siguiente
-                  </button>
-                </div>
+                    </div>
+                    
+                    {/* Expanded Género Question Details */}
+                    {expandedRows.has(`genero-${row.column}`) && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <h5 className="font-medium text-gray-900 dark:text-white mb-3">Opciones disponibles:</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {csvData
+                            .filter(csvRow => {
+                              if (row.type === 'multiple_max') {
+                                return csvRow.column.startsWith(row.column + '/') || csvRow.column === row.column;
+                              } else {
+                                return csvRow.column === row.column;
+                              }
+                            })
+                            .map((option, optionIndex) => (
+                              <div 
+                                key={optionIndex} 
+                                className="bg-white dark:bg-gray-600 rounded-lg p-3 border border-gray-200 dark:border-gray-500"
+                              >
+                                <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                                  {option.column.includes('/') ? option.column.split('/')[1] : option.column}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                  {option.name}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    option.score && parseFloat(option.score) > 0
+                                      ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                                  }`}>
+                                    Puntaje: {option.score || '0'}
+                                  </span>
+                                  {option.value && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      Valor: {option.value}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Potencial OMEC Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 mb-8">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Potencial OMEC</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Preguntas relacionadas con el potencial OMEC</p>
               </div>
             </div>
-          )}
+            
+            {/* Potencial OMEC Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {groupedData.filter(row => row.potencial_omec && row.potencial_omec.trim() !== '' && row.potencial_omec !== 'N/A').length}
+                </div>
+                <div className="text-sm text-orange-700 dark:text-orange-300">Total Preguntas</div>
+              </div>
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {groupedData.filter(row => row.potencial_omec && row.potencial_omec.trim() !== '' && row.potencial_omec !== 'N/A').reduce((sum, row) => sum + row.maxScore, 0)}
+                </div>
+                <div className="text-sm text-orange-700 dark:text-orange-300">Puntaje Máximo Total</div>
+              </div>
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {groupedData.filter(row => row.potencial_omec && row.potencial_omec.trim() !== '' && row.potencial_omec !== 'N/A' && row.type === 'multiple_max').length}
+                </div>
+                <div className="text-sm text-orange-700 dark:text-orange-400">Preguntas Múltiples</div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Potencial OMEC Questions List */}
+          <div className="p-6">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Lista de Preguntas de Potencial OMEC</h4>
+            <div className="space-y-3">
+              {groupedData
+                .filter(row => row.potencial_omec && row.potencial_omec.trim() !== '' && row.potencial_omec !== 'N/A')
+                .filter(row => !searchTerm || 
+                  row.column.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  row.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  row.section.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((row, index) => (
+                  <div key={`omec-${index}`} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className="text-sm font-mono text-gray-600 dark:text-gray-400">{row.column}</span>
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            row.maxScore > 0 
+                              ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                          }`}>
+                            {row.maxScore > 0 ? `Puntaje: ${row.maxScore}` : 'Sin puntaje'}
+                          </span>
+                          {row.type && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                              {row.type}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-900 dark:text-white mb-2">{row.name}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            {row.section}
+                          </span>
+                          {row.eem && row.eem.trim() !== '' && row.eem !== 'N/A' && (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                              EEM: {row.eem}
+                            </span>
+                          )}
+                          {row.genero && row.genero.trim() !== '' && row.genero !== 'N/A' && (
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                              Género: {row.genero}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => toggleRowExpansion(`omec-${row.column}`)}
+                        className="ml-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                      >
+                        <svg 
+                          className={`w-5 h-5 transition-transform ${expandedRows.has(`omec-${row.column}`) ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Expanded Potencial OMEC Question Details */}
+                    {expandedRows.has(`omec-${row.column}`) && (
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <h5 className="font-medium text-gray-900 dark:text-white mb-3">Opciones disponibles:</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {csvData
+                            .filter(csvRow => {
+                              if (row.type === 'multiple_max') {
+                                return csvRow.column.startsWith(row.column + '/') || csvRow.column === row.column;
+                              } else {
+                                return csvRow.column === row.column;
+                              }
+                            })
+                            .map((option, optionIndex) => (
+                              <div 
+                                key={optionIndex} 
+                                className="bg-white dark:bg-gray-600 rounded-lg p-3 border border-gray-200 dark:border-gray-500"
+                              >
+                                <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                                  {option.column.includes('/') ? option.column.split('/')[1] : option.column}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                  {option.name}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    option.score && parseFloat(option.score) > 0
+                                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400'
+                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+                                  }`}>
+                                    Puntaje: {option.score || '0'}
+                                  </span>
+                                  {option.value && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      Valor: {option.value}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
         </div>
       </main>
     </div>
