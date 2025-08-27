@@ -414,12 +414,14 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
 
     return (
       <div className="space-y-8">
+        {/* Puntuación General */}
+        {renderOverview()}
+
+        {/* Categorías */}
         {/* EEM Categories */}
         {eemCategories.length > 0 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Evaluación de Efectividad de Manejo (EEM)
-            </h3>
+            
             {eemCategories.map((category, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div 
@@ -427,10 +429,10 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                   onClick={() => toggleCategory(`eem-${category.category}`)}
                 >
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {category.category}
-                    </h4>
-                    <ScoreIcon percentage={category.percentage} size="xs" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+
+                      Evaluación de Efectividad de Manejo (EEM)
+                    </h3>
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
@@ -470,9 +472,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
         {/* Género Categories */}
         {generoCategories.length > 0 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Género
-            </h3>
+            
             {generoCategories.map((category, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div 
@@ -480,10 +480,9 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                   onClick={() => toggleCategory(`genero-${category.category}`)}
                 >
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {category.category}
-                    </h4>
-                    <ScoreIcon percentage={category.percentage} size="xs" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Género
+                    </h3>
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
@@ -523,9 +522,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
         {/* Potencial OMEC Categories */}
         {omecCategories.length > 0 && (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              Potencial OMEC
-            </h3>
+            
             {omecCategories.map((category, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
                 <div 
@@ -534,9 +531,8 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                 >
                   <div className="flex items-center space-x-2">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {category.category}
+                    Potencial OMEC
                     </h4>
-                    <ScoreIcon percentage={category.percentage} size="xs" />
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
