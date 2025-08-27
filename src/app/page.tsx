@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useKoboToolBox } from './hooks/useKoboToolBox';
-import { scoringService, SectionScore } from './services/scoringService';
+import { scoringService } from './services/scoringService';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -33,10 +33,8 @@ export default function Home() {
         for (const submission of submissions) {
           try {
             const result = await scoringService.evaluateSubmission(submission.rawData);
-            // Calculate general score from section scores
-            const sectionTotalScore = result.sectionScores.reduce((sum: number, section: SectionScore) => sum + section.score, 0);
-            const sectionMaxScore = result.sectionScores.reduce((sum: number, section: SectionScore) => sum + section.maxScore, 0);
-            const generalPercentage = sectionMaxScore > 0 ? (sectionTotalScore / sectionMaxScore) * 100 : 0;
+            // Calculate general score from total score and max possible score
+            const generalPercentage = result.maxPossibleScore > 0 ? (result.totalScore / result.maxPossibleScore) * 100 : 0;
             scores[submission.id] = generalPercentage;
           } catch (error) {
             console.warn(`Error calculating score for submission ${submission.id}:`, error);

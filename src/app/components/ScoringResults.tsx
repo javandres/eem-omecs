@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { 
-  ScoringResult
+  ScoringResult,
+  CategoryScore
 } from '../services/scoringService';
 
 interface ScoringResultsProps {
@@ -11,9 +12,7 @@ interface ScoringResultsProps {
 }
 
 export default function ScoringResults({ scoringResult, onExport }: ScoringResultsProps) {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [expandedGenders, setExpandedGenders] = useState<Set<string>>(new Set());
-  const [expandedOmec, setExpandedOmec] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(() => {
     // Initialize with all questions collapsed by default
     const allQuestionKeys = new Set<string>();
@@ -22,8 +21,8 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
         if (result.section) {
           allQuestionKeys.add(`section-${result.section}-${result.column}`);
         }
-        if (result.gender) {
-          allQuestionKeys.add(`gender-${result.gender}-${result.column}`);
+        if (result.genero) {
+          allQuestionKeys.add(`genero-${result.genero}-${result.column}`);
         }
         if (result.omecPotential) {
           allQuestionKeys.add(`omec-${result.omecPotential}-${result.column}`);
@@ -33,54 +32,27 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     return allQuestionKeys;
   });
 
-  const toggleSection = (section: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(section)) {
-      newExpanded.delete(section);
+  const toggleCategory = (categoryKey: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryKey)) {
+      newExpanded.delete(categoryKey);
     } else {
-      newExpanded.add(section);
-      // When expanding a section, collapse all question details by default
-      // Get all question keys for this section and add them to collapsedQuestions
-      // while preserving existing collapsed state of other questions
-      const sectionQuestions = scoringResult.detailedResults
-        .filter(result => result.section === section)
-        .map(result => `section-${section}-${result.column}`);
-      setCollapsedQuestions(prev => new Set([...prev, ...sectionQuestions]));
+      newExpanded.add(categoryKey);
+      // When expanding a category, collapse all question details by default
+      const categoryQuestions = scoringResult.detailedResults
+        .filter(result => {
+          const categoryType = getCategoryType(result);
+          const categoryValue = getCategoryValue(result, categoryType);
+          return `${categoryType}-${categoryValue}` === categoryKey;
+        })
+        .map(result => {
+          const categoryType = getCategoryType(result);
+          const categoryValue = getCategoryValue(result, categoryType);
+          return `${categoryType}-${categoryValue}-${result.column}`;
+        });
+      setCollapsedQuestions(prev => new Set([...prev, ...categoryQuestions]));
     }
-    setExpandedSections(newExpanded);
-  };
-
-  const toggleGender = (gender: string) => {
-    const newExpanded = new Set(expandedGenders);
-    if (newExpanded.has(gender)) {
-      newExpanded.delete(gender);
-    } else {
-      newExpanded.add(gender);
-      // When expanding a gender group, collapse all question details by default
-      // Get all question keys for this gender and add them to collapsedQuestions
-      // while preserving existing collapsed state of other questions
-      const genderQuestions = scoringResult.detailedResults
-        .filter(result => result.gender === gender)
-        .map(result => `gender-${gender}-${result.column}`);
-      setCollapsedQuestions(prev => new Set([...prev, ...genderQuestions]));
-    }
-    setExpandedGenders(newExpanded);
-  };
-
-  const toggleOmec = (potential: string) => {
-    const newExpanded = new Set(expandedOmec);
-    if (newExpanded.has(potential)) {
-      newExpanded.delete(potential);
-    } else {
-      newExpanded.add(potential);
-      // When expanding an OMEC potential group, collapse all question details by default
-      // Get all question keys for this OMEC potential and add them to collapsedQuestions
-      const omecQuestions = scoringResult.detailedResults
-        .filter(result => result.omecPotential === potential)
-        .map(result => `omec-${potential}-${result.column}`);
-      setCollapsedQuestions(prev => new Set([...prev, ...omecQuestions]));
-    }
-    setExpandedOmec(newExpanded);
+    setExpandedCategories(newExpanded);
   };
 
   const toggleQuestion = (questionKey: string) => {
@@ -91,6 +63,22 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
       newCollapsed.add(questionKey);
     }
     setCollapsedQuestions(newCollapsed);
+  };
+
+  const getCategoryType = (result: { eem?: string; genero?: string; omecPotential?: string }): string => {
+    if (result.eem && result.eem.trim() !== '' && result.eem !== 'N/A') return 'eem';
+    if (result.genero && result.genero.trim() !== '' && result.genero !== 'N/A') return 'genero';
+    if (result.omecPotential && result.omecPotential.trim() !== '' && result.omecPotential !== 'N/A') return 'omec';
+    return 'section';
+  };
+
+  const getCategoryValue = (result: { eem?: string; genero?: string; omecPotential?: string }, categoryType: string): string => {
+    switch (categoryType) {
+      case 'eem': return result.eem || '';
+      case 'genero': return result.genero || '';
+      case 'omec': return result.omecPotential || '';
+      default: return '';
+    }
   };
 
   const getScoreColor = (percentage: number) => {
@@ -129,15 +117,19 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     );
   };
 
-  const renderQuestionDetails = (section: string, type: 'section' | 'gender' | 'omec') => {
+  const renderQuestionDetails = (categoryKey: string) => {
+    const [categoryType, categoryValue] = categoryKey.split('-', 2);
+    
     let filteredResults: typeof scoringResult.detailedResults = [];
     
-    if (type === 'section') {
-      filteredResults = scoringResult.detailedResults.filter(result => result.section === section);
-    } else if (type === 'gender') {
-      filteredResults = scoringResult.detailedResults.filter(result => result.gender === section);
-    } else if (type === 'omec') {
-      filteredResults = scoringResult.detailedResults.filter(result => result.omecPotential === section);
+    if (categoryType === 'eem') {
+      filteredResults = scoringResult.detailedResults.filter(result => result.eem === categoryValue);
+    } else if (categoryType === 'genero') {
+      filteredResults = scoringResult.detailedResults.filter(result => result.genero === categoryValue);
+    } else if (categoryType === 'omec') {
+      filteredResults = scoringResult.detailedResults.filter(result => result.omecPotential === categoryValue);
+    } else {
+      filteredResults = scoringResult.detailedResults.filter(result => result.section === categoryValue);
     }
 
     // Group results by question/column
@@ -158,7 +150,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
         </h5>
         {Array.from(groupedQuestions.entries()).map(([column, results]) => {
           const firstResult = results[0];
-          const questionKey = `${type}-${section}-${column}`;
+          const questionKey = `${categoryKey}-${column}`;
           const isCollapsed = collapsedQuestions.has(questionKey);
 
           // Special handling for multiple_max questions
@@ -182,7 +174,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           Tipo: <span className="font-medium">{firstResult.type}</span>
                           {firstResult.section && ` • Sección: ${firstResult.section}`}
-                          {firstResult.gender && ` • Género: ${firstResult.gender}`}
+                          {firstResult.genero && ` • Género: ${firstResult.genero}`}
                           {firstResult.omecPotential && ` • Potencial OMEC: ${firstResult.omecPotential}`}
                         </span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor((firstResult.score / firstResult.maxScore) * 100)}`}>
@@ -206,8 +198,6 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                 {/* Collapsible Question Details for multiple_max */}
                 {!isCollapsed && (
                   <div className="px-4 pb-4 space-y-3">
-                    
-                    
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300 block mb-2">
                       Opciones disponibles:
                     </p>
@@ -295,7 +285,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         Tipo: <span className="font-medium">{firstResult.type}</span>
                         {firstResult.section && ` • Sección: ${firstResult.section}`}
-                        {firstResult.gender && ` • Género: ${firstResult.gender}`}
+                        {firstResult.genero && ` • Género: ${firstResult.genero}`}
                         {firstResult.omecPotential && ` • Potencial OMEC: ${firstResult.omecPotential}`}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor((selectedResult.score / questionMaxScore) * 100)}`}>
@@ -373,10 +363,10 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
   };
 
   const renderOverview = () => {
-    // Calculate general score only from section scores
-    const sectionTotalScore = scoringResult.sectionScores.reduce((sum, section) => sum + section.score, 0);
-    const sectionMaxScore = scoringResult.sectionScores.reduce((sum, section) => sum + section.maxScore, 0);
-    const sectionPercentage = sectionMaxScore > 0 ? (sectionTotalScore / sectionMaxScore) * 100 : 0;
+    // Calculate general score from category scores
+    const categoryTotalScore = scoringResult.categoryScores.reduce((sum, category) => sum + category.score, 0);
+    const categoryMaxScore = scoringResult.categoryScores.reduce((sum, category) => sum + category.maxScore, 0);
+    const categoryPercentage = categoryMaxScore > 0 ? (categoryTotalScore / categoryMaxScore) * 100 : 0;
 
     // Get the appropriate color based on percentage
     const getGeneralScoreColor = (percentage: number) => {
@@ -394,21 +384,21 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Puntuación General
             </h3>
-            <ScoreIcon percentage={sectionPercentage} size="sm" />
+            <ScoreIcon percentage={categoryPercentage} size="sm" />
           </div>
           <div className="text-center">
-            <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r ${getGeneralScoreColor(sectionPercentage)} mb-4`}>
+            <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r ${getGeneralScoreColor(categoryPercentage)} mb-4`}>
               <div className="text-center">
                 <div className="text-3xl font-bold text-white">
-                  {sectionPercentage.toFixed(2)}%
+                  {categoryPercentage.toFixed(2)}%
                 </div>
                 <div className="text-sm text-white">
-                  {sectionTotalScore}/{sectionMaxScore}
+                  {categoryTotalScore}/{categoryMaxScore}
                 </div>
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Puntuación total obtenida (solo por secciones)
+              Puntuación total obtenida por todas las categorías
             </p>
           </div>
         </div>
@@ -416,177 +406,183 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     );
   };
 
-  const renderSections = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Por Secciones
-      </h3>
-      {scoringResult.sectionScores.map((section, index) => (
-        <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div 
-            className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
-            onClick={() => toggleSection(section.section)}
-          >
-            <div className="flex items-center space-x-2">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {section.section}
-              </h4>
-              <ScoreIcon percentage={section.percentage} size="xs" />
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(section.percentage)}`}>
-                {section.percentage.toFixed(1)}%
-              </span>
-              <svg 
-                className={`w-5 h-5 text-gray-500 transition-transform ${expandedSections.has(section.section) ? 'rotate-180' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-          
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-              <span>Puntuación: {section.score}/{section.maxScore}</span>
-              <span>{section.questionCount} preguntas</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${getScoreBarColor(section.percentage)}`}
-                style={{ width: `${section.percentage}%` }}
-              ></div>
-            </div>
-          </div>
+  const renderCategories = () => {
+    // Group categories by type
+    const eemCategories = scoringResult.categoryScores.filter(cat => cat.categoryType === 'eem');
+    const generoCategories = scoringResult.categoryScores.filter(cat => cat.categoryType === 'genero');
+    const omecCategories = scoringResult.categoryScores.filter(cat => cat.categoryType === 'potencial_omec');
 
-          {/* Expandable Question Details */}
-          {expandedSections.has(section.section) && renderQuestionDetails(section.section, 'section')}
-        </div>
-      ))}
-    </div>
-  );
+    return (
+      <div className="space-y-8">
+        {/* EEM Categories */}
+        {eemCategories.length > 0 && (
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Evaluación de Efectividad de Manejo (EEM)
+            </h3>
+            {eemCategories.map((category, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div 
+                  className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
+                  onClick={() => toggleCategory(`eem-${category.category}`)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {category.category}
+                    </h4>
+                    <ScoreIcon percentage={category.percentage} size="xs" />
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
+                      {category.percentage.toFixed(1)}%
+                    </span>
+                    <svg 
+                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedCategories.has(`eem-${category.category}`) ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <span>Puntuación: {category.score}/{category.maxScore}</span>
+                    <span>{category.questionCount} preguntas</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full ${getScoreBarColor(category.percentage)}`}
+                      style={{ width: `${category.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
 
-  const renderGender = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Por Género
-      </h3>
-      {scoringResult.genderScores.map((gender, index) => (
-        <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div 
-            className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
-            onClick={() => toggleGender(gender.gender)}
-          >
-            <div className="flex items-center space-x-2">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {gender.gender}
-              </h4>
-              <ScoreIcon percentage={gender.percentage} size="xs" />
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(gender.percentage)}`}>
-                {gender.percentage.toFixed(1)}%
-              </span>
-              <svg 
-                className={`w-5 h-5 text-gray-500 transition-transform ${expandedGenders.has(gender.gender) ? 'rotate-180' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+                {/* Expandable Question Details */}
+                {expandedCategories.has(`eem-${category.category}`) && renderQuestionDetails(`eem-${category.category}`)}
+              </div>
+            ))}
           </div>
-          
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-              <span>Puntuación: {gender.score}/{gender.maxScore}</span>
-              <span>{gender.questionCount} preguntas</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${getScoreBarColor(gender.percentage)}`}
-                style={{ width: `${gender.percentage}%` }}
-              ></div>
-            </div>
-          </div>
+        )}
 
-          {/* Expandable Question Details */}
-          {expandedGenders.has(gender.gender) && renderQuestionDetails(gender.gender, 'gender')}
-        </div>
-      ))}
-    </div>
-  );
+        {/* Género Categories */}
+        {generoCategories.length > 0 && (
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Género
+            </h3>
+            {generoCategories.map((category, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div 
+                  className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
+                  onClick={() => toggleCategory(`genero-${category.category}`)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {category.category}
+                    </h4>
+                    <ScoreIcon percentage={category.percentage} size="xs" />
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
+                      {category.percentage.toFixed(1)}%
+                    </span>
+                    <svg 
+                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedCategories.has(`genero-${category.category}`) ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <span>Puntuación: {category.score}/{category.maxScore}</span>
+                    <span>{category.questionCount} preguntas</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full ${getScoreBarColor(category.percentage)}`}
+                      style={{ width: `${category.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
 
-  const renderOmec = () => (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Potencial OMEC
-      </h3>
-      {scoringResult.omecPotentialScores.map((potential, index) => (
-        <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div 
-            className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
-            onClick={() => toggleOmec(potential.potential)}
-          >
-            <div className="flex items-center space-x-2">
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {potential.potential}
-              </h4>
-              <ScoreIcon percentage={potential.percentage} size="xs" />
-            </div>
-            <div className="flex items-center space-x-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(potential.percentage)}`}>
-                {potential.percentage.toFixed(1)}%
-              </span>
-              <svg 
-                className={`w-5 h-5 text-gray-500 transition-transform ${expandedOmec.has(potential.potential) ? 'rotate-180' : ''}`}
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+                {/* Expandable Question Details */}
+                {expandedCategories.has(`genero-${category.category}`) && renderQuestionDetails(`genero-${category.category}`)}
+              </div>
+            ))}
           </div>
-          
-          <div className="mb-4">
-            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
-              <span>Puntuación: {potential.score}/{potential.maxScore}</span>
-              <span>{potential.questionCount} preguntas</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${getScoreBarColor(potential.percentage)}`}
-                style={{ width: `${potential.percentage}%` }}
-              ></div>
-            </div>
-          </div>
+        )}
 
-          {/* Expandable Question Details */}
-          {expandedOmec.has(potential.potential) && renderQuestionDetails(potential.potential, 'omec')}
-        </div>
-      ))}
-    </div>
-  );
+        {/* Potencial OMEC Categories */}
+        {omecCategories.length > 0 && (
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              Potencial OMEC
+            </h3>
+            {omecCategories.map((category, index) => (
+              <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div 
+                  className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
+                  onClick={() => toggleCategory(`omec-${category.category}`)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {category.category}
+                    </h4>
+                    <ScoreIcon percentage={category.percentage} size="xs" />
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
+                      {category.percentage.toFixed(1)}%
+                    </span>
+                    <svg 
+                      className={`w-5 h-5 text-gray-500 transition-transform ${expandedCategories.has(`omec-${category.category}`) ? 'rotate-180' : ''}`}
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    <span>Puntuación: {category.score}/{category.maxScore}</span>
+                    <span>{category.questionCount} preguntas</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full ${getScoreBarColor(category.percentage)}`}
+                      style={{ width: `${category.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Expandable Question Details */}
+                {expandedCategories.has(`omec-${category.category}`) && renderQuestionDetails(`omec-${category.category}`)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-8">
-     
-
       {/* Puntuación General */}
       {renderOverview()}
 
-      {/* Por Secciones */}
-      {renderSections()}
-
-      {/* Por Género */}
-      {renderGender()}
-
-      {/* Potencial OMEC */}
-      {renderOmec()}
+      {/* Categorías */}
+      {renderCategories()}
     </div>
   );
 }
