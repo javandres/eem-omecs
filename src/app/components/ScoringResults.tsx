@@ -431,9 +431,9 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                     </h4>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
+                    <div className={`flex items-center justify-center px-4 py-2 rounded-xl font-bold text-lg ${getScoreColor(category.percentage)}`}>
                       {category.percentage.toFixed(1)}%
-                    </span>
+                    </div>
                     <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 ${expandedCategories.has(`eem-${category.category}`) ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}>
                       <svg 
                         className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-all duration-200 ${expandedCategories.has(`eem-${category.category}`) ? 'text-blue-600 dark:text-blue-400 rotate-180' : ''}`}
@@ -484,9 +484,9 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                     </h4>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
+                    <div className={`flex items-center justify-center px-4 py-2 rounded-xl font-bold text-lg ${getScoreColor(category.percentage)}`}>
                       {category.percentage.toFixed(1)}%
-                    </span>
+                    </div>
                     <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 ${expandedCategories.has(`genero-${category.category}`) ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}>
                       <svg 
                         className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-all duration-200 ${expandedCategories.has(`genero-${category.category}`) ? 'text-blue-600 dark:text-blue-400 rotate-180' : ''}`}
@@ -537,9 +537,9 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                     </h4>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(category.percentage)}`}>
+                    <div className={`flex items-center justify-center px-4 py-2 rounded-xl font-bold text-lg ${getScoreColor(category.percentage)}`}>
                       {category.percentage.toFixed(1)}%
-                    </span>
+                    </div>
                     <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 ${expandedCategories.has(`omec-${category.category}`) ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}>
                       <svg 
                         className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-all duration-200 ${expandedCategories.has(`omec-${category.category}`) ? 'text-blue-600 dark:text-blue-400 rotate-180' : ''}`}
@@ -579,11 +579,11 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
 
   return (
     <div className="space-y-8">
-      {/* Puntuación General */}
-      {renderOverview()}
-
       {/* Categorías */}
       {renderCategories()}
+
+      {/* Puntuación General */}
+      {renderOverview()}
     </div>
   );
 }
