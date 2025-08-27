@@ -33,8 +33,10 @@ export default function Home() {
         for (const submission of submissions) {
           try {
             const result = await scoringService.evaluateSubmission(submission.rawData);
-            // Calculate general score from total score and max possible score
-            const generalPercentage = result.maxPossibleScore > 0 ? (result.totalScore / result.maxPossibleScore) * 100 : 0;
+            // Calculate general score from category scores (same formula as ScoringResults)
+            const categoryTotalScore = result.categoryScores.reduce((sum, category) => sum + category.score, 0);
+            const categoryMaxScore = result.categoryScores.reduce((sum, category) => sum + category.maxScore, 0);
+            const generalPercentage = categoryMaxScore > 0 ? (categoryTotalScore / categoryMaxScore) * 100 : 0;
             scores[submission.id] = generalPercentage;
           } catch (error) {
             console.warn(`Error calculating score for submission ${submission.id}:`, error);
