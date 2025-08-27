@@ -79,13 +79,48 @@ export default function Home() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completado":
+    // Convert to lowercase for case-insensitive comparison
+    const statusLower = status.toLowerCase();
+    
+    switch (statusLower) {
+      case "completado":
+      case "completed":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+      
+      case "aprobado":
+      case "approved":
         return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400";
-      case "En Proceso":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-emerald-400";
-      case "Pendiente de Revisión":
+      
+      case "en proceso":
+      case "en_proceso":
+      case "in process":
+      case "under review":
+      case "en revisión":
+      case "en_revision":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+      
+      case "pendiente de revisión":
+      case "pendiente":
+      case "pending":
+      case "pending review":
+      case "en espera":
+      case "on hold":
+      case "not reviewed":
+      case "not_reviewed":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      
+      case "rechazado":
+      case "rejected":
+      case "no aprobado":
+      case "not approved":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      
+      case "borrador":
+      case "draft":
+      case "enviado":
+      case "submitted":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+      
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
     }
