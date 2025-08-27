@@ -176,6 +176,155 @@ class ScoringService {
     console.log('Multiple max rules grouped:', Array.from(this.groupedMultipleMaxRules.entries()));
   }
 
+  /**
+   * Calculate the total maximum possible score from all available scoring rules
+   * This ensures that maxPossibleScore is constant regardless of submission responses
+   */
+  private calculateTotalMaxPossibleScore(): number {
+    let totalMax = 0;
+    
+    // Add scores from multiple_max rules (already grouped)
+    for (const group of this.groupedMultipleMaxRules.values()) {
+      totalMax += group.maxPossibleScore;
+    }
+    
+    // Add scores from other rule types
+    for (const rule of this.scoringRules) {
+      if (rule.type !== 'multiple_max') {
+        totalMax += rule.score;
+      }
+    }
+    
+    console.log(`Calculated total max possible score: ${totalMax} from ${this.scoringRules.length} rules`);
+    return totalMax;
+  }
+
+  /**
+   * Calculate the maximum possible score for each category based on ALL available rules
+   * This ensures category max scores are constant regardless of submission responses
+   */
+  private calculateCategoryMaxScores(): {
+    eem: Map<string, number>;
+    genero: Map<string, number>;
+    omecPotential: Map<string, number>;
+  } {
+    const eemMaxScores = new Map<string, number>();
+    const generoMaxScores = new Map<string, number>();
+    const omecPotentialMaxScores = new Map<string, number>();
+
+    console.log('=== DEBUGGING calculateCategoryMaxScores ===');
+    console.log('Total scoring rules:', this.scoringRules.length);
+    console.log('Multiple max groups:', this.groupedMultipleMaxRules.size);
+
+    // Process multiple_max rules by group (not by individual rule to avoid duplication)
+    const processedGroups = new Set<string>();
+    for (const [baseColumn, group] of this.groupedMultipleMaxRules) {
+      if (processedGroups.has(baseColumn)) continue;
+      processedGroups.add(baseColumn);
+      
+      console.log(`Processing multiple_max group: ${baseColumn}`);
+      console.log(`  - EEM: ${group.eem}`);
+      console.log(`  - Género: ${group.genero}`);
+      console.log(`  - Potencial OMEC: ${group.potencial_omec}`);
+      console.log(`  - Max possible score: ${group.maxPossibleScore}`);
+      
+      // Add to EEM category if applicable
+      if (group.eem && group.eem.trim() !== '' && group.eem !== 'N/A') {
+        const currentScore = eemMaxScores.get(group.eem) || 0;
+        eemMaxScores.set(group.eem, currentScore + group.maxPossibleScore);
+        console.log(`  -> Added ${group.maxPossibleScore} to EEM category "${group.eem}" (total: ${currentScore + group.maxPossibleScore})`);
+      }
+      // Add to Género category if applicable
+      if (group.genero && group.genero.trim() !== '' && group.genero !== 'N/A') {
+        const currentScore = generoMaxScores.get(group.genero) || 0;
+        generoMaxScores.set(group.genero, currentScore + group.maxPossibleScore);
+        console.log(`  -> Added ${group.maxPossibleScore} to Género category "${group.genero}" (total: ${currentScore + group.maxPossibleScore})`);
+      }
+      // Add to Potencial OMEC category if applicable
+      if (group.potencial_omec && group.potencial_omec.trim() !== '' && group.potencial_omec !== 'N/A') {
+        const currentScore = omecPotentialMaxScores.get(group.potencial_omec) || 0;
+        omecPotentialMaxScores.set(group.potencial_omec, currentScore + group.maxPossibleScore);
+        console.log(`  -> Added ${group.maxPossibleScore} to Potencial OMEC category "${group.potencial_omec}" (total: ${currentScore + group.maxPossibleScore})`);
+      }
+    }
+
+    // Group rules by column and category to find max scores
+    console.log('\nProcessing non-multiple_max rules by column:');
+    
+    // Group rules by column and category
+    const columnGroups = new Map<string, {
+      eem: Map<string, number>;
+      genero: Map<string, number>;
+      omecPotential: Map<string, number>;
+    }>();
+
+    for (const rule of this.scoringRules) {
+      if (rule.type !== 'multiple_max') {
+        if (!columnGroups.has(rule.column)) {
+          columnGroups.set(rule.column, {
+            eem: new Map<string, number>(),
+            genero: new Map<string, number>(),
+            omecPotential: new Map<string, number>()
+          });
+        }
+
+        const columnGroup = columnGroups.get(rule.column)!;
+
+        // Group by EEM category
+        if (rule.eem && rule.eem.trim() !== '' && rule.eem !== 'N/A') {
+          const currentMax = columnGroup.eem.get(rule.eem) || 0;
+          columnGroup.eem.set(rule.eem, Math.max(currentMax, rule.score));
+        }
+
+        // Group by Género category
+        if (rule.genero && rule.genero.trim() !== '' && rule.genero !== 'N/A') {
+          const currentMax = columnGroup.genero.get(rule.genero) || 0;
+          columnGroup.genero.set(rule.genero, Math.max(currentMax, rule.score));
+        }
+
+        // Group by Potencial OMEC category
+        if (rule.potencial_omec && rule.potencial_omec.trim() !== '' && rule.potencial_omec !== 'N/A') {
+          const currentMax = columnGroup.omecPotential.get(rule.potencial_omec) || 0;
+          columnGroup.omecPotential.set(rule.potencial_omec, Math.max(currentMax, rule.score));
+        }
+      }
+    }
+
+    // Now process the grouped rules to add max scores to categories
+    for (const [column, columnGroup] of columnGroups) {
+      console.log(`\nColumn ${column}:`);
+      
+      // Process EEM scores
+      for (const [eemCategory, maxScore] of columnGroup.eem) {
+        const currentScore = eemMaxScores.get(eemCategory) || 0;
+        eemMaxScores.set(eemCategory, currentScore + maxScore);
+        console.log(`  -> Added ${maxScore} to EEM category "${eemCategory}" for column ${column} (total: ${currentScore + maxScore})`);
+      }
+
+      // Process Género scores
+      for (const [generoCategory, maxScore] of columnGroup.genero) {
+        const currentScore = generoMaxScores.get(generoCategory) || 0;
+        generoMaxScores.set(generoCategory, currentScore + maxScore);
+        console.log(`  -> Added ${maxScore} to Género category "${generoCategory}" for column ${column} (total: ${currentScore + maxScore})`);
+      }
+
+      // Process Potencial OMEC scores
+      for (const [omecCategory, maxScore] of columnGroup.omecPotential) {
+        const currentScore = omecPotentialMaxScores.get(omecCategory) || 0;
+        omecPotentialMaxScores.set(omecCategory, currentScore + maxScore);
+        console.log(`  -> Added ${maxScore} to Potencial OMEC category "${omecCategory}" for column ${column} (total: ${currentScore + maxScore})`);
+      }
+    }
+
+    console.log('\n=== FINAL CATEGORY MAX SCORES ===');
+    console.log('EEM:', Object.fromEntries(eemMaxScores));
+    console.log('Género:', Object.fromEntries(generoMaxScores));
+    console.log('Potencial OMEC:', Object.fromEntries(omecPotentialMaxScores));
+    console.log('=== END DEBUGGING ===\n');
+
+    return { eem: eemMaxScores, genero: generoMaxScores, omecPotential: omecPotentialMaxScores };
+  }
+
   async evaluateSubmission(submission: KoboToolBoxSubmission): Promise<ScoringResult> {
     if (this.scoringRules.length === 0) {
       await this.loadScoringRules();
@@ -183,7 +332,10 @@ class ScoringService {
 
     const detailedResults: DetailedResult[] = [];
     let totalScore = 0;
-    let maxPossibleScore = 0;
+    
+    // Calculate maxPossibleScore from ALL available rules (not just answered questions)
+    const maxPossibleScore = this.calculateTotalMaxPossibleScore();
+    console.log(`Total max possible score from all rules: ${maxPossibleScore}`);
 
     // Get all unique columns from submission that have values
     const submissionColumns = this.getSubmissionColumns(submission);
@@ -215,7 +367,7 @@ class ScoringService {
       });
 
       totalScore += score;
-      maxPossibleScore += group.maxPossibleScore;
+      // Don't add to maxPossibleScore here since it's already calculated
       processedMultipleMaxColumns.add(baseColumn);
       
       console.log(`Multiple max question ${baseColumn} scored: ${score}/${group.maxPossibleScore}`);
@@ -260,7 +412,136 @@ class ScoringService {
         });
 
         totalScore += score;
-        maxPossibleScore += rule.score;
+        // Don't add to maxPossibleScore here since it's already calculated
+      }
+    }
+
+    // Now add all unanswered questions for each category to show complete picture
+    const categoryMaxScores = this.calculateCategoryMaxScores();
+    
+    // Add unanswered EEM questions
+    for (const [eemCategory, maxScore] of categoryMaxScores.eem) {
+      const eemRules = this.scoringRules.filter(rule => 
+        rule.eem === eemCategory && rule.type !== 'multiple_max'
+      );
+
+      // Group by column to avoid duplicates
+      const eemColumns = new Map<string, ScoringRule>();
+      for (const rule of eemRules) {
+        if (!eemColumns.has(rule.column)) {
+          eemColumns.set(rule.column, rule);
+        } else {
+          // Keep the rule with the highest score
+          const existingRule = eemColumns.get(rule.column)!;
+          if (rule.score > existingRule.score) {
+            eemColumns.set(rule.column, rule);
+          }
+        }
+      }
+
+      // Add unanswered questions
+      for (const [column, rule] of eemColumns) {
+        const exists = detailedResults.some(result => 
+          result.column === column && result.eem === eemCategory
+        );
+        
+        if (!exists) {
+          detailedResults.push({
+            column: rule.column,
+            question: rule.name,
+            section: rule.section,
+            eem: rule.eem,
+            genero: rule.genero,
+            omecPotential: rule.potencial_omec,
+            expectedValue: rule.value,
+            actualValue: 'No respondido',
+            score: 0, // Unanswered questions get 0 points
+            maxScore: rule.score,
+            type: rule.type
+          });
+        }
+      }
+    }
+
+    // Add unanswered Género questions
+    for (const [generoCategory, maxScore] of categoryMaxScores.genero) {
+      const generoRules = this.scoringRules.filter(rule => 
+        rule.genero === generoCategory && rule.type !== 'multiple_max'
+      );
+
+      const generoColumns = new Map<string, ScoringRule>();
+      for (const rule of generoRules) {
+        if (!generoColumns.has(rule.column)) {
+          generoColumns.set(rule.column, rule);
+        } else {
+          const existingRule = generoColumns.get(rule.column)!;
+          if (rule.score > existingRule.score) {
+            generoColumns.set(rule.column, rule);
+          }
+        }
+      }
+
+      for (const [column, rule] of generoColumns) {
+        const exists = detailedResults.some(result => 
+          result.column === column && result.genero === generoCategory
+        );
+        
+        if (!exists) {
+          detailedResults.push({
+            column: rule.column,
+            question: rule.name,
+            section: rule.section,
+            eem: rule.eem,
+            genero: rule.genero,
+            omecPotential: rule.potencial_omec,
+            expectedValue: rule.value,
+            actualValue: 'No respondido',
+            score: 0,
+            maxScore: rule.score,
+            type: rule.type
+          });
+        }
+      }
+    }
+
+    // Add unanswered Potencial OMEC questions
+    for (const [omecCategory, maxScore] of categoryMaxScores.omecPotential) {
+      const omecRules = this.scoringRules.filter(rule => 
+        rule.potencial_omec === omecCategory && rule.type !== 'multiple_max'
+      );
+
+      const omecColumns = new Map<string, ScoringRule>();
+      for (const rule of omecRules) {
+        if (!omecColumns.has(rule.column)) {
+          omecColumns.set(rule.column, rule);
+        } else {
+          const existingRule = omecColumns.get(rule.column)!;
+          if (rule.score > existingRule.score) {
+            omecColumns.set(rule.column, rule);
+          }
+        }
+      }
+
+      for (const [column, rule] of omecColumns) {
+        const exists = detailedResults.some(result => 
+          result.column === column && result.omecPotential === omecCategory
+        );
+        
+        if (!exists) {
+          detailedResults.push({
+            column: rule.column,
+            question: rule.name,
+            section: rule.section,
+            eem: rule.eem,
+            genero: rule.genero,
+            omecPotential: rule.potencial_omec,
+            expectedValue: rule.value,
+            actualValue: 'No respondido',
+            score: 0,
+            maxScore: rule.score,
+            type: rule.type
+          });
+        }
       }
     }
 
@@ -492,107 +773,99 @@ class ScoringService {
   }
 
   private calculateCategoryScores(detailedResults: DetailedResult[]): CategoryScore[] {
-    const eemMap = new Map<string, { score: number; maxScore: number; uniqueQuestions: Set<string>; questionMaxScores: Map<string, number> }>();
-    const generoMap = new Map<string, { score: number; maxScore: number; uniqueQuestions: Set<string>; questionMaxScores: Map<string, number> }>();
-    const omecPotentialMap = new Map<string, { score: number; maxScore: number; uniqueQuestions: Set<string>; questionMaxScores: Map<string, number> }>();
+    const categoryMaxScores = this.calculateCategoryMaxScores();
 
+    // Initialize all categories with their max scores from rules
+    const eemScores = Array.from(categoryMaxScores.eem.entries()).map(([eem, maxScore]) => ({
+      category: eem || 'Sin EEM',
+      categoryType: 'eem' as const,
+      score: 0, // Will be calculated from detailed results
+      maxScore: maxScore,
+      percentage: 0, // Will be calculated from detailed results
+      questionCount: 0 // Will be calculated from detailed results
+    }));
+
+    const generoScores = Array.from(categoryMaxScores.genero.entries()).map(([genero, maxScore]) => ({
+      category: genero || 'Sin género',
+      categoryType: 'genero' as const,
+      score: 0, // Will be calculated from detailed results
+      maxScore: maxScore,
+      percentage: 0, // Will be calculated from detailed results
+      questionCount: 0 // Will be calculated from detailed results
+    }));
+
+    const omecPotentialScores = Array.from(categoryMaxScores.omecPotential.entries()).map(([potential, maxScore]) => ({
+      category: potential || 'Sin potencial OMEC',
+      categoryType: 'potencial_omec' as const,
+      score: 0, // Will be calculated from detailed results
+      maxScore: maxScore,
+      percentage: 0, // Will be calculated from detailed results
+      questionCount: 0 // Will be calculated from detailed results
+    }));
+
+    // Track unique columns for each category to avoid counting the same question multiple times
+    const eemUniqueColumns = new Set<string>();
+    const generoUniqueColumns = new Set<string>();
+    const omecPotentialUniqueColumns = new Set<string>();
+
+    // Process detailed results to populate scores and question counts
     for (const result of detailedResults) {
       // Process EEM category
       if (result.eem && result.eem.trim() !== '' && result.eem !== 'N/A') {
-        const current = eemMap.get(result.eem) || { 
-          score: 0, 
-          maxScore: 0, 
-          uniqueQuestions: new Set(),
-          questionMaxScores: new Map()
-        };
-        current.score += result.score;
-        if (!current.questionMaxScores.has(result.column)) {
-          current.questionMaxScores.set(result.column, result.maxScore);
-          current.maxScore += result.maxScore;
-        } else {
-          const currentMax = current.questionMaxScores.get(result.column)!;
-          if (result.maxScore > currentMax) {
-            current.maxScore = current.maxScore - currentMax + result.maxScore;
-            current.questionMaxScores.set(result.column, result.maxScore);
+        const categoryData = eemScores.find(cat => cat.category === result.eem);
+        if (categoryData) {
+          categoryData.score += result.score;
+          // Only count the column once
+          if (!eemUniqueColumns.has(result.column)) {
+            eemUniqueColumns.add(result.column);
+            categoryData.questionCount++;
           }
         }
-        current.uniqueQuestions.add(result.column);
-        eemMap.set(result.eem, current);
       }
 
       // Process Género category
       if (result.genero && result.genero.trim() !== '' && result.genero !== 'N/A') {
-        const current = generoMap.get(result.genero) || { 
-          score: 0, 
-          maxScore: 0, 
-          uniqueQuestions: new Set(),
-          questionMaxScores: new Map()
-        };
-        current.score += result.score;
-        if (!current.questionMaxScores.has(result.column)) {
-          current.questionMaxScores.set(result.column, result.maxScore);
-          current.maxScore += result.maxScore;
-        } else {
-          const currentMax = current.questionMaxScores.get(result.column)!;
-          if (result.maxScore > currentMax) {
-            current.maxScore = current.maxScore - currentMax + result.maxScore;
-            current.questionMaxScores.set(result.column, result.maxScore);
+        const categoryData = generoScores.find(cat => cat.category === result.genero);
+        if (categoryData) {
+          categoryData.score += result.score;
+          // Only count the column once
+          if (!generoUniqueColumns.has(result.column)) {
+            generoUniqueColumns.add(result.column);
+            categoryData.questionCount++;
           }
         }
-        current.uniqueQuestions.add(result.column);
-        generoMap.set(result.genero, current);
       }
 
       // Process Potencial OMEC category
       if (result.omecPotential && result.omecPotential.trim() !== '' && result.omecPotential !== 'N/A') {
-        const current = omecPotentialMap.get(result.omecPotential) || { 
-          score: 0, 
-          maxScore: 0, 
-          uniqueQuestions: new Set(),
-          questionMaxScores: new Map()
-        };
-        current.score += result.score;
-        if (!current.questionMaxScores.has(result.column)) {
-          current.questionMaxScores.set(result.column, result.maxScore);
-          current.maxScore += result.maxScore;
-        } else {
-          const currentMax = current.questionMaxScores.get(result.column)!;
-          if (result.maxScore > currentMax) {
-            current.maxScore = current.maxScore - currentMax + result.maxScore;
-            current.questionMaxScores.set(result.column, result.maxScore);
+        const categoryData = omecPotentialScores.find(cat => cat.category === result.omecPotential);
+        if (categoryData) {
+          categoryData.score += result.score;
+          // Only count the column once
+          if (!omecPotentialUniqueColumns.has(result.column)) {
+            omecPotentialUniqueColumns.add(result.column);
+            categoryData.questionCount++;
           }
         }
-        current.uniqueQuestions.add(result.column);
-        omecPotentialMap.set(result.omecPotential, current);
       }
     }
 
-    const eemScores = Array.from(eemMap.entries()).map(([eem, data]) => ({
-      category: eem || 'Sin EEM',
-      categoryType: 'eem' as const,
-      score: data.score,
-      maxScore: data.maxScore,
-      percentage: data.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0,
-      questionCount: data.uniqueQuestions.size
-    }));
+    // Calculate percentages based on the calculated scores and max scores
+    eemScores.forEach(cat => {
+      cat.percentage = cat.maxScore > 0 ? (cat.score / cat.maxScore) * 100 : 0;
+    });
+    generoScores.forEach(cat => {
+      cat.percentage = cat.maxScore > 0 ? (cat.score / cat.maxScore) * 100 : 0;
+    });
+    omecPotentialScores.forEach(cat => {
+      cat.percentage = cat.maxScore > 0 ? (cat.score / cat.maxScore) * 100 : 0;
+    });
 
-    const generoScores = Array.from(generoMap.entries()).map(([genero, data]) => ({
-      category: genero || 'Sin género',
-      categoryType: 'genero' as const,
-      score: data.score,
-      maxScore: data.maxScore,
-      percentage: data.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0,
-      questionCount: data.uniqueQuestions.size
-    }));
-
-    const omecPotentialScores = Array.from(omecPotentialMap.entries()).map(([potential, data]) => ({
-      category: potential || 'Sin potencial OMEC',
-      categoryType: 'potencial_omec' as const,
-      score: data.score,
-      maxScore: data.maxScore,
-      percentage: data.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0,
-      questionCount: data.uniqueQuestions.size
-    }));
+    // Log the final category scores for debugging
+    console.log('Final category scores:');
+    [...eemScores, ...generoScores, ...omecPotentialScores].forEach(cat => {
+      console.log(`  ${cat.categoryType.toUpperCase()} - ${cat.category}: ${cat.score}/${cat.maxScore} (${cat.percentage.toFixed(2)}%) - ${cat.questionCount} questions`);
+    });
 
     return [...eemScores, ...generoScores, ...omecPotentialScores];
   }

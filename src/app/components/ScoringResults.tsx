@@ -167,15 +167,15 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                       <h6 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
                         {firstResult.question}
                       </h6>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                      {/* <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                         Columna: <span className="font-mono">{column}</span>
-                      </p>
+                      </p> */}
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Tipo: <span className="font-medium">{firstResult.type}</span>
+                          {/* Tipos: <span className="font-medium">{firstResult.type}</span>
                           {firstResult.section && ` • Sección: ${firstResult.section}`}
                           {firstResult.genero && ` • Género: ${firstResult.genero}`}
-                          {firstResult.omecPotential && ` • Potencial OMEC: ${firstResult.omecPotential}`}
+                          {firstResult.omecPotential && ` • Potencial OMEC: ${firstResult.omecPotential}`} */}
                         </span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor((firstResult.score / firstResult.maxScore) * 100)}`}>
                           Puntuación: {firstResult.score}/{firstResult.maxScore}
@@ -278,15 +278,15 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
                     <h6 className="font-medium text-gray-900 dark:text-white text-sm mb-1">
                       {firstResult.question}
                     </h6>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                    {/* <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                       Columna: <span className="font-mono">{column}</span>
-                    </p>
+                    </p> */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Tipo: <span className="font-medium">{firstResult.type}</span>
+                        {/* Tipo: <span className="font-medium">{firstResult.type}</span>
                         {firstResult.section && ` • Sección: ${firstResult.section}`}
                         {firstResult.genero && ` • Género: ${firstResult.genero}`}
-                        {firstResult.omecPotential && ` • Potencial OMEC: ${firstResult.omecPotential}`}
+                        {firstResult.omecPotential && ` • Potencial OMEC: ${firstResult.omecPotential}`} */}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getScoreColor((selectedResult.score / questionMaxScore) * 100)}`}>
                         Puntuación: {selectedResult.score}/{questionMaxScore}
@@ -398,7 +398,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400">
-              Puntuación total obtenida por todas las categorías
+              Puntuación total obtenida en todas las preguntas
             </p>
           </div>
         </div>
