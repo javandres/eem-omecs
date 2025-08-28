@@ -144,9 +144,9 @@ _0420_acceso_comunid,"4.20. ¿Las comunidades tienen acceso a los recursos natur
 _042101_mecanismo_resoluc_conf,4.21.1. ¿Existen mecanismos específicos para resolver conflictos por el uso de los recursos naturales?,gestion,,x,,si,1,select
 _042101_mecanismo_resoluc_conf,4.21.1. ¿Existen mecanismos específicos para resolver conflictos por el uso de los recursos naturales?,gestion,,x,,no,0,select
 _042102_mecanismo_resoluc_conf_001,"4.21.2. Describa si los procesos, medios o mecanismos para resolución de conflictos por el uso de los recursos naturales del área",,,,,,,
-_0422_mecanismo_acceso_recursos,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,,x,,ordenado,1,select
-_0422_mecanismo_acceso_recursos,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,,x,,desordenado,0,select
-_0422_mecanismo_acceso_recursos,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,,x,,no_hay,0,select
+_0422_mecanismo_acceso_recurso,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,,x,,ordenado,1,select
+_0422_mecanismo_acceso_recurso,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,,x,,desordenado,0,select
+_0422_mecanismo_acceso_recurso,4.22. El acceso a los recursos naturales en el Área se decide de manera:,gestion,,x,,no_hay,0,select
 _0422_acceso_recursos,4.22.2 Describa el mecanismo mediante el cual se decide el acceso a los recursos naturales en el Área,,,,,,,
 _050101_objetivos_conserv_area,5.1.1. Indique si el Área de Conservación cuenta con objetivos del manejo,caracteristicas_area,x,,,si,1,select
 _050101_objetivos_conserv_area,5.1.1. Indique si el Área de Conservación cuenta con objetivos del manejo,caracteristicas_area,x,,,no,0,select
@@ -172,11 +172,11 @@ _0507_zonificacion,5.7. Indique si el Área cuenta con una zonificación,caracte
 _0508_tipos_de_areas,5.8. Describa que tipos de zonificación existen en el Área,,,,,,,
 _050901_actividades_permitidas,5.9.1 Describa que actividades están permitidas en el Área y si hay un control sobre las actividades permitidas,,,,,,,
 _050902_actividades_monitoread,5.9.2. Indique si estas actividades son o no monitoreadas,,,,,,,
-_0510_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,alto,6,select
-_0510_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,medio,5,select
-_0510_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,bajo,4,select
-_0510_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,no_sabe,1,select
-_0510_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,no,0,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,alto,6,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,medio,5,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,bajo,4,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,no_sabe,1,select
+_051001_investigacion_nivel,5.10. Seleccione el nivel de investigación que se realiza en el Área,caracteristicas_area,x,,,no,0,select
 _051002_tipo_investigacion,5.10.2. Describa el tipo o tipos de investigación que se realizan en el Área,,,,,,,
 _051003_particip_gen_inv,5.10.3 Estime la participación diferenciada por género en las actividades de Investigación,caracteristicas_area,,x,,mas_mujeres_prod,3,select
 _051003_particip_gen_inv,5.10.3 Estime la participación diferenciada por género en las actividades de Investigación,caracteristicas_area,,x,,igual_mujeres_hombres_prod,2,select
@@ -205,10 +205,10 @@ _051203_particip_gen_produc,5.12.3 Estime la participación diferenciada por gé
 _051401_distribucion_beneficio,5.14.1 Indique si la distribución de los beneficios generados por turismo y producción según el género es:,caracteristicas_area,,,,equitativa,2,select
 _051401_distribucion_beneficio,5.14.1 Indique si la distribución de los beneficios generados por turismo y producción según el género es:,caracteristicas_area,,,,desconocida,1,select
 _051401_distribucion_beneficio,5.14.1 Indique si la distribución de los beneficios generados por turismo y producción según el género es:,caracteristicas_area,,,,inequitativa,0,select
-_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_mujeres_ayoritario,3,select
-_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_igual_hombres_mujeres,2,select
-_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_mujeres_minoritario,1,select
-_051402_distribucion_beneficio,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_nada_mujeres,0,select
+_051401_distribucion_beneficio_001,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_mujeres_mayoritario,3,select
+_051401_distribucion_beneficio_001,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_igual_hombres_mujeres,2,select
+_051401_distribucion_beneficio_001,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_mujeres_minoritario,1,select
+_051401_distribucion_beneficio_001,5.14.2 Los beneficios generados por turismo y producción según el género son distribuidos:,caracteristicas_area,,x,,prc_nada_mujeres,0,select
 Gracias_por_su_tiemp_de_reas_protegidas,"Gracias por su tiempo, sus respuestas serán muy valiosas para reconocer y visibilizar los esfuerzos de conservación que se llevan a cabo fuera del sistema nacional de áreas protegidas",,,,,,,
 _id,_id,,,,,,,
 _uuid,_uuid,,,,,,,
