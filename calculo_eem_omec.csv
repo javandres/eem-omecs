@@ -73,9 +73,9 @@ _040302_genero_admin,4.3.2. ¿Género de quién Gestor(a) Principal - Gerente -A
 _040401_prog_manejo,4.4.1. ¿Cuenta con programas de manejo?,gestion,x,,,si,1,select
 _040401_prog_manejo,4.4.1. ¿Cuenta con programas de manejo?,gestion,x,,,no,0,select
 _040402_prog_manejo_cual,4.4.2. Especifique el tipo de programa de manejo con el que cuenta,,,,,,,
-_040501_num_guardabosq_x_ha,4.5.1. ¿Con cuántos guardabosques cuenta el Área por hectárea?,gestion,x,,,mas_de_1_guardabosque,2,select
-_040501_num_guardabosq_x_ha,4.5.1. ¿Con cuántos guardabosques cuenta el Área por hectárea?,gestion,x,,,1_guardabosque,1,select
-_040501_num_guardabosq_x_ha,4.5.1. ¿Con cuántos guardabosques cuenta el Área por hectárea?,gestion,x,,,sin_guardabosques,0,select
+_040501_num_guardabosq_x_ha,4.5.1. ¿Con cuántos guardabosques cuenta el Área por cada 5mil hectáreas?,gestion,x,,,mas_de_1_guardabosque,2,select
+_040501_num_guardabosq_x_ha,4.5.1. ¿Con cuántos guardabosques cuenta el Área por cada 5mil hectáreas?,gestion,x,,,1_guardabosque,1,select
+_040501_num_guardabosq_x_ha,4.5.1. ¿Con cuántos guardabosques cuenta el Área por cada 5mil hectáreas?,gestion,x,,,sin_guardabosques,0,select
 _040502_muj_guardabosq,4.5.2. Estimación de mujeres Guardabosques,gestion,,x,,mujeres_mas,3,
 _040502_muj_guardabosq,4.5.2. Estimación de mujeres Guardabosques,gestion,,x,,mujeres_hombres_igual,2,
 _040502_muj_guardabosq,4.5.2. Estimación de mujeres Guardabosques,gestion,,x,,mujeres_menos,1,
