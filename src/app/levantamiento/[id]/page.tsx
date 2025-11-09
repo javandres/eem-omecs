@@ -221,7 +221,7 @@ export default function LevantamientoPage() {
                     {transformedData.formType}
                   </p>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                {/* <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -231,7 +231,7 @@ export default function LevantamientoPage() {
                   <p className="text-lg font-semibold text-gray-900 dark:text-white">
                     {transformedData.submittedBy}
                   </p>
-                </div>
+                </div> */}
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <div className="flex items-center space-x-2 mb-2">
                     <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,7 +255,7 @@ export default function LevantamientoPage() {
               Evaluación y Puntuación
             </h2>
             <div className="flex items-center space-x-3">
-              <Link 
+              {/* <Link 
                 href={`/levantamiento/${id}/detalles`}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
@@ -263,7 +263,7 @@ export default function LevantamientoPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 00.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Ver detalles del formulario
-              </Link>
+              </Link> */}
               {scoringLoading && (
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-emerald-500" xmlns="http://http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
