@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useKoboToolBox } from './hooks/useKoboToolBox';
 import { scoringService } from './services/scoringService';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function Home() {
   const {
@@ -20,6 +20,81 @@ export default function Home() {
   } = useKoboToolBox();
 
   const [submissionScores, setSubmissionScores] = useState<Record<string, number>>({});
+  const [selectedArea, setSelectedArea] = useState<string>('');
+
+  // Helper function to extract area name from submission (used in both extraction and filtering)
+  const getAreaName = useCallback((submission: typeof submissions[0]): string | null => {
+    // Try both the full field name and the shortened version
+    const areaName = 
+      submission.rawData['_03_info_area_de_conservacion/_0305_nombre_aconserv'] ||
+      submission.rawData['_0305_nombre_aconserv'] ||
+      submission.rawData['nombre_aconserv'] ||
+      submission.title;
+    
+    return areaName ? String(areaName).trim() : null;
+  }, []);
+
+  // Extract unique areas from submissions
+  const uniqueAreas = Array.from(
+    new Set(
+      submissions
+        .map(submission => getAreaName(submission))
+        .filter((area): area is string => area !== null && area !== '')
+    )
+  ).sort();
+
+  // Debug: Log areas when submissions change or area is selected
+  useEffect(() => {
+    if (submissions.length > 0) {
+      console.log('=== DEBUG INFO ===');
+      console.log('Submissions loaded:', submissions.length);
+      console.log('Selected area:', selectedArea || '(none)');
+      
+      // Log area extraction for all submissions
+      submissions.forEach((submission, index) => {
+        const areaName = getAreaName(submission);
+        console.log(`Submission ${index + 1}:`, {
+          id: submission.id,
+          title: submission.title,
+          extractedArea: areaName || '(null)',
+          rawDataAreaField: submission.rawData['_03_info_area_de_conservacion/_0305_nombre_aconserv'] || submission.rawData['_0305_nombre_aconserv'] || '(not found)'
+        });
+      });
+      
+      console.log('Unique areas found:', uniqueAreas);
+      
+      // Test the filtering logic
+      if (selectedArea) {
+        const testFiltered = submissions.filter(submission => {
+          const areaName = getAreaName(submission);
+          if (!areaName) return false;
+          const normalizedAreaName = areaName.toLowerCase().trim();
+          const normalizedSelectedArea = selectedArea.toLowerCase().trim();
+          const matches = normalizedAreaName === normalizedSelectedArea;
+          console.log(`Comparing "${areaName}" with "${selectedArea}": ${matches}`);
+          return matches;
+        });
+        console.log('Filtered submissions count:', testFiltered.length);
+        console.log('Filtered submission IDs:', testFiltered.map(s => s.id));
+      }
+      
+    }
+  }, [submissions, selectedArea, uniqueAreas, getAreaName]);
+
+  // Filter submissions by selected area
+  // Don't show any submissions until an area is selected
+  const filteredSubmissions = selectedArea
+    ? submissions.filter(submission => {
+        const areaName = getAreaName(submission);
+        if (!areaName) return false;
+        
+        // Normalize both strings for comparison (trim, case-insensitive)
+        const normalizedAreaName = areaName.toLowerCase().trim();
+        const normalizedSelectedArea = selectedArea.toLowerCase().trim();
+        
+        return normalizedAreaName === normalizedSelectedArea;
+      })
+    : [];
 
   // Calculate scores for submissions
   useEffect(() => {
@@ -243,13 +318,30 @@ export default function Home() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Levantamientos</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {loading ? 'Cargando datos...' : `Formularios de información recopilados (${submissions.length} total)`}
+                  {loading ? 'Cargando datos...' : selectedArea ? `Formularios de información recopilados (${filteredSubmissions.length} de ${submissions.length} total)` : `Seleccione un área para ver los levantamientos (${submissions.length} total disponibles)`}
                 </p>
                 <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
                   💡 Haz clic en cualquier fila para ver los detalles del levantamiento
                 </p>
               </div>
               <div className="flex items-center space-x-2">
+                <select
+                  value={selectedArea}
+                  onChange={(e) => setSelectedArea(e.target.value)}
+                  disabled={loading}
+                  className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed min-w-[200px]"
+                >
+                  <option value="">Seleccione un área</option>
+                  {uniqueAreas.length > 0 ? (
+                    uniqueAreas.map((area) => (
+                      <option key={area} value={area}>
+                        {area}
+                      </option>
+                    ))
+                  ) : (
+                    !loading && <option value="" disabled>No hay áreas disponibles</option>
+                  )}
+                </select>
                 <button 
                   onClick={refreshData}
                   disabled={loading}
@@ -291,6 +383,22 @@ export default function Home() {
                   <span className="text-gray-600 dark:text-gray-400">Cargando levantamientos desde KoboToolBox...</span>
                 </div>
               </div>
+            ) : !selectedArea ? (
+              <div className="p-12 text-center">
+                <div className="inline-flex flex-col items-center space-y-4">
+                  <svg className="w-16 h-16 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+                  </svg>
+                  <div>
+                    <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Seleccione un área para ver los levantamientos
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Por favor, seleccione un área evaluada del selector para visualizar los levantamientos correspondientes.
+                    </p>
+                  </div>
+                </div>
+              </div>
             ) : (
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
@@ -319,14 +427,14 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {submissions.length === 0 ? (
+                  {filteredSubmissions.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                        {error ? 'Error al cargar los datos' : 'No hay levantamientos disponibles'}
+                        {error ? 'Error al cargar los datos' : selectedArea ? `No hay levantamientos para el área "${selectedArea}"` : 'No hay levantamientos disponibles'}
                       </td>
                     </tr>
                   ) : (
-                    submissions.map((submission) => (
+                    filteredSubmissions.map((submission) => (
                       <tr 
                         key={submission.id} 
                         className="hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all duration-200 cursor-pointer group"
@@ -390,7 +498,12 @@ export default function Home() {
           <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-700 dark:text-gray-300">
-                Mostrando <span className="font-medium">{submissions.length}</span> de <span className="font-medium">{submissions.length}</span> levantamientos
+                Mostrando <span className="font-medium">{filteredSubmissions.length}</span> de <span className="font-medium">{submissions.length}</span> levantamientos
+                {selectedArea && (
+                  <span className="ml-2 text-emerald-600 dark:text-emerald-400">
+                    (filtrado por: {selectedArea})
+                  </span>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <button 
