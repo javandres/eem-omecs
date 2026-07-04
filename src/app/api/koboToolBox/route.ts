@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const KOBOTOOLBOX_BASE_URL = 'https://kf.kobotoolbox.org/api/v2';
-const FORM_ID = 'aJL3a7T5SjJTPiQeUGLqZk';
-const ACCESS_TOKEN = 'fd878e903edb0cd60938789c593875448c723a0d';
+import { getKoboToolBoxConfig } from '../../config/koboToolBoxEnv';
 
 // Mock data for testing when API is not available
 const mockSubmissions = [
@@ -66,7 +63,7 @@ export async function GET(request: NextRequest) {
           });
         case 'form':
           return NextResponse.json({
-            uid: FORM_ID,
+            uid: getKoboToolBoxConfig()?.formId ?? 'mock-form-id',
             name: 'Formulario de Levantamientos',
             asset_type: 'survey',
             date_created: '2024-01-01T00:00:00Z',
@@ -264,6 +261,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const config = getKoboToolBoxConfig();
+    if (!config) {
+      return NextResponse.json(
+        {
+          error: 'KoboToolBox not configured',
+          message: 'Defina KOBOTOOLBOX_FORM_ID (o FORM_ID) y KOBOTOOLBOX_TOKEN.',
+          suggestion: 'Use mock=true para pruebas sin credenciales',
+        },
+        { status: 503 }
+      );
+    }
+
+    const { formId, token, baseUrl } = config;
+
     let url: string;
     
     // If testUrl is provided, use it directly for testing
@@ -272,26 +283,26 @@ export async function GET(request: NextRequest) {
     } else {
       switch (action) {
         case 'submissions':
-          url = `${KOBOTOOLBOX_BASE_URL}/assets/${FORM_ID}/data/?page=${page}&page_size=${pageSize}`;
+          url = `${baseUrl}/assets/${formId}/data/?page=${page}&page_size=${pageSize}`;
           break;
         case 'submission':
           if (!submissionId) {
             return NextResponse.json({ error: 'submissionId is required' }, { status: 400 });
           }
-          url = `${KOBOTOOLBOX_BASE_URL}/assets/${FORM_ID}/data/${submissionId}/`;
+          url = `${baseUrl}/assets/${formId}/data/${submissionId}/`;
           break;
         case 'form':
-          url = `${KOBOTOOLBOX_BASE_URL}/assets/${FORM_ID}/`;
+          url = `${baseUrl}/assets/${formId}/`;
           break;
         case 'form_structure':
-          url = `${KOBOTOOLBOX_BASE_URL}/assets/${FORM_ID}/content/`;
+          url = `${baseUrl}/assets/${formId}/content/`;
           break;
         case 'form_xform':
-          url = `${KOBOTOOLBOX_BASE_URL}/assets/${FORM_ID}/xform/`;
+          url = `${baseUrl}/assets/${formId}/xform/`;
           break;
         case 'form_export':
           // Try export endpoint, but it might not exist in all Kobo versions
-          url = `${KOBOTOOLBOX_BASE_URL}/assets/${FORM_ID}/export/`;
+          url = `${baseUrl}/assets/${formId}/export/`;
           break;
         default:
           return NextResponse.json({ error: 'Invalid action. Use: submissions, submission, form, form_structure, form_xform, or form_export' }, { status: 400 });
@@ -299,12 +310,12 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Proxying request to:', url);
-    console.log('Using token:', ACCESS_TOKEN ? 'Present' : 'Missing');
+    console.log('Using token:', token ? 'Present' : 'Missing');
 
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Token ${ACCESS_TOKEN}`,
+        'Authorization': `Token ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json, text/plain, */*',
         'User-Agent': 'EEM-OMECS/1.0',

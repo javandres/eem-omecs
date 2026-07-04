@@ -6,11 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: eem-omecs-app
+    env_file:
+      - .env
     ports:
       - "3005:3000"
     environment:
       - NODE_ENV=production
       - NEXT_TELEMETRY_DISABLED=1
+      - KOBOTOOLBOX_FORM_ID=${KOBOTOOLBOX_FORM_ID}
+      - KOBOTOOLBOX_TOKEN=${KOBOTOOLBOX_TOKEN}
+      - KOBOTOOLBOX_BASE_URL=${KOBOTOOLBOX_BASE_URL:-https://kf.kobotoolbox.org/api/v2}
     volumes:
       # Mount the CSV data file if needed
       - ./calculo_eem_omec.csv:/app/calculo_eem_omec.csv:ro

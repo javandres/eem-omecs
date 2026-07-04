@@ -108,9 +108,9 @@ export default function ConfigPage() {
         <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-yellow-800 mb-2">Nota importante:</h3>
           <p className="text-yellow-700">
-            El token de acceso de KoboToolBox parece haber expirado o no ser válido. 
-            Por ahora, el sistema está configurado para usar datos simulados. 
-            Para conectar con la API real, necesitarás un token de acceso válido.
+            Para conectar con la API real de KoboToolBox, configure las variables de entorno
+            <code className="mx-1">KOBOTOOLBOX_FORM_ID</code> y <code className="mx-1">KOBOTOOLBOX_TOKEN</code>.
+            Use el modo mock para pruebas sin credenciales.
           </p>
         </div>
       </div>

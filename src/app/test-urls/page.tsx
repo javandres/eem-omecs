@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 export default function TestURLsPage() {
+  const [formId, setFormId] = useState('');
   const [testResults, setTestResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -29,34 +30,39 @@ export default function TestURLsPage() {
   };
 
   const runAllTests = async () => {
+    if (!formId) {
+      setTestResults([`${new Date().toLocaleTimeString()}: ❌ Ingrese el Form ID antes de ejecutar las pruebas`]);
+      return;
+    }
+
     setLoading(true);
     setTestResults([]);
-    
+
     const testURLs = [
       {
-        url: 'https://kf.kobotoolbox.org/api/v2/assets/aJL3a7T5SjJTPiQeUGLqZk/',
-        description: 'Form details - API v2'
+        url: `https://kf.kobotoolbox.org/api/v2/assets/${formId}/`,
+        description: 'Form details - API v2',
       },
       {
-        url: 'https://kf.kobotoolbox.org/api/v1/assets/aJL3a7T5SjJTPiQeUGLqZk/',
-        description: 'Form details - API v1'
+        url: `https://kf.kobotoolbox.org/api/v1/assets/${formId}/`,
+        description: 'Form details - API v1',
       },
       {
-        url: 'https://kf.kobotoolbox.org/api/assets/aJL3a7T5SjJTPiQeUGLqZk/',
-        description: 'Form details - API base'
+        url: `https://kf.kobotoolbox.org/api/assets/${formId}/`,
+        description: 'Form details - API base',
       },
       {
-        url: 'https://kf.kobotoolbox.org/api/v2/assets/aJL3a7T5SjJTPiQeUGLqZk/data/',
-        description: 'Submissions - API v2'
+        url: `https://kf.kobotoolbox.org/api/v2/assets/${formId}/data/`,
+        description: 'Submissions - API v2',
       },
       {
-        url: 'https://kf.kobotoolbox.org/api/v1/assets/aJL3a7T5SjJTPiQeUGLqZk/data/',
-        description: 'Submissions - API v1'
+        url: `https://kf.kobotoolbox.org/api/v1/assets/${formId}/data/`,
+        description: 'Submissions - API v1',
       },
       {
-        url: 'https://kf.kobotoolbox.org/api/assets/aJL3a7T5SjJTPiQeUGLqZk/data/',
-        description: 'Submissions - API base'
-      }
+        url: `https://kf.kobotoolbox.org/api/assets/${formId}/data/`,
+        description: 'Submissions - API base',
+      },
     ];
 
     for (const test of testURLs) {
@@ -75,6 +81,16 @@ export default function TestURLsPage() {
         </h1>
         
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Form ID (KOBOTOOLBOX_FORM_ID)
+          </label>
+          <input
+            type="text"
+            value={formId}
+            onChange={(e) => setFormId(e.target.value)}
+            placeholder="Ingrese el Form ID del formulario Kobo"
+            className="w-full rounded border border-gray-300 px-3 py-2 mb-4"
+          />
           <button
             onClick={runAllTests}
             disabled={loading}

@@ -3,8 +3,8 @@
 import { useState } from 'react';
 
 export default function AdvancedConfigPage() {
-  const [token, setToken] = useState('fd878e903edb0cd60938789c593875448c723a0d');
-  const [formId, setFormId] = useState('aJL3a7T5SjJTPiQeUGLqZk');
+  const [token, setToken] = useState('');
+  const [formId, setFormId] = useState('');
   const [testResults, setTestResults] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 

@@ -1,7 +1,5 @@
 // KoboToolBox API Service - Using Next.js API proxy to avoid CORS issues
 const API_BASE_URL = '/api/koboToolBox';
-const FORM_ID = 'aJL3a7T5SjJTPiQeUGLqZk';
-const ACCESS_TOKEN = 'fd878e903edb0cd60938789c593875448c723a0d';
 
 export interface KoboToolBoxSubmission {
   id: string;
@@ -55,13 +53,9 @@ export interface TransformedSubmission {
 
 class KoboToolBoxService {
   private baseURL: string;
-  private formId: string;
-  private accessToken: string;
 
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.formId = FORM_ID;
-    this.accessToken = ACCESS_TOKEN;
   }
 
   private getHeaders(): HeadersInit {
@@ -255,7 +249,6 @@ class KoboToolBoxService {
     try {
       console.log('Testing KoboToolBox API connection via proxy...');
       console.log('Proxy URL:', this.baseURL);
-      console.log('Form ID:', this.formId);
 
       let successCount = 0;
       const totalEndpoints = 5;

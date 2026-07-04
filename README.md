@@ -4,6 +4,8 @@
 
 A comprehensive web application for evaluating the effectiveness of conservation area management managed by various actors, including indigenous peoples and nationalities, local communities, civil society organizations, private sector, and local governments, who aspire to be recognized as Other Effective Area-based Conservation Measures (OMEC) according to the criteria established by the Convention on Biological Diversity (CBD).
 
+> **Documentación completa de despliegue (WWF):** [docs/DOCUMENTACION-DESPLIEGUE-WWF.md](docs/DOCUMENTACION-DESPLIEGUE-WWF.md)
+
 ## 🎯 Purpose
 
 This tool measures and strengthens the effectiveness of conservation area management by providing:
@@ -33,9 +35,10 @@ This tool measures and strengthens the effectiveness of conservation area manage
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+- Node.js 18+
 - npm, yarn, pnpm, or bun
 - Docker (for containerized deployment)
+- KoboToolBox account and API credentials (for production data)
 
 ### Local Development
 
@@ -45,25 +48,23 @@ This tool measures and strengthens the effectiveness of conservation area manage
    cd eem-omecs
    ```
 
-2. **Install dependencies:**
+2. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your KoboToolBox credentials (optional for mock mode)
+   ```
+
+3. **Install dependencies:**
    ```bash
    npm install
-   # or
-   yarn install
-   # or
-   pnpm install
    ```
 
-3. **Start the development server:**
+4. **Start the development server:**
    ```bash
    npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
    ```
 
-4. **Open your browser:**
+5. **Open your browser:**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ### Available Scripts
@@ -78,6 +79,10 @@ This tool measures and strengthens the effectiveness of conservation area manage
 ### Quick Start (Production)
 
 ```bash
+# Configure credentials
+cp .env.example .env
+# Edit .env: KOBOTOOLBOX_FORM_ID and KOBOTOOLBOX_TOKEN
+
 # Build and start the production container
 docker compose up --build -d
 
@@ -88,20 +93,15 @@ docker compose ps
 docker compose logs -f eem-omecs
 
 # Access the application
-# Open http://localhost:3000
+# Open http://localhost:3005  (host port mapped in docker-compose.yml)
 ```
 
 ### Development Environment
 
 ```bash
-# Build and start the development container
 docker compose -f docker-compose.dev.yml up --build -d
-
-# Check status
-docker compose -f docker-compose.dev.yml ps
-
-# View logs
 docker compose -f docker-compose.dev.yml logs -f eem-omecs-dev
+# Open http://localhost:3000
 ```
 
 ### Docker Commands
@@ -113,39 +113,118 @@ docker compose -f docker-compose.dev.yml logs -f eem-omecs-dev
 | Restart | `docker compose restart` | `docker compose -f docker-compose.dev.yml restart` |
 | Rebuild | `docker compose up --build -d` | `docker compose -f docker-compose.dev.yml up --build -d` |
 
-## 📁 Project Structure
-
-```
-src/
-├── app/                    # Next.js app directory
-│   ├── api/               # API routes
-│   ├── components/        # Reusable UI components
-│   ├── csv-viewer/        # CSV data visualization
-│   ├── hooks/            # Custom React hooks
-│   ├── levantamiento/     # Individual submission views
-│   ├── services/          # Business logic services
-│   ├── test-scoring-ui/   # Scoring test interface
-│   ├── types/            # TypeScript type definitions
-│   └── layout.tsx        # Root layout component
-├── Dockerfile             # Production Docker configuration
-├── Dockerfile.dev         # Development Docker configuration
-├── docker-compose.yml     # Production Docker Compose
-├── docker-compose.dev.yml # Development Docker Compose
-└── next.config.js        # Next.js configuration
-```
-
 ## 🔧 Configuration
 
 ### Environment Variables
-- `NODE_ENV`: Set to `production` for production builds
-- `NEXT_TELEMETRY_DISABLED`: Disables Next.js telemetry
+
+Copy `.env.example` to `.env` and configure:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `KOBOTOOLBOX_FORM_ID` | Yes* | KoboToolBox form asset UID |
+| `FORM_ID` | Yes* | Alias for `KOBOTOOLBOX_FORM_ID` |
+| `KOBOTOOLBOX_TOKEN` | Yes* | KoboToolBox API token |
+| `KOBOTOOLBOX_BASE_URL` | No | Default: `https://kf.kobotoolbox.org/api/v2` |
+| `NODE_ENV` | Yes (prod) | Set to `production` for production builds |
+| `NEXT_TELEMETRY_DISABLED` | No | Set to `1` to disable Next.js telemetry |
+| `NEXT_PUBLIC_BASE_URL` | Conditional | Public app URL (required for scoring by submission ID in production) |
+
+\* Required for real KoboToolBox data. Without them, use `mock=true` on API calls for testing.
+
+Credentials are read server-side only (`src/app/config/koboToolBoxEnv.ts`). The API token is never exposed to the browser.
 
 ### Ports
-- **Application**: 3000 (mapped to host port 3000)
+
+| Environment | Host port | Container port |
+|-------------|-----------|----------------|
+| Production (Docker) | **3005** | 3000 |
+| Development (Docker) | 3000 | 3000 |
+| Local `npm run dev` | 3000 | — |
 
 ### Data Sources
-- **CSV Data**: The `calculo_eem_omec.csv` file is mounted as read-only
-- **KoboToolBox**: Integration for form submission data
+- **CSV Data**: `calculo_eem_omec.csv` — scoring rules (mounted read-only in Docker)
+- **KoboToolBox**: Form submissions via API proxy
+
+## 📋 Data Collection with KoboToolBox
+
+EEM-OMECS does **not** collect field data directly. Data collection happens in **KoboToolBox** (mobile app or web form). Once submissions are sent to Kobo, EEM-OMECS fetches them via API, applies scoring rules, and displays results on the dashboard.
+
+### Overview
+
+```
+XLSForm → KoboToolBox → Field collection (mobile/web) → EEM-OMECS dashboard
+```
+
+### 1. Publish the form in KoboToolBox
+
+1. Log in to [https://kf.kobotoolbox.org](https://kf.kobotoolbox.org).
+2. **New** → **Upload an XLSForm** (Excel file for the EEM-OMECS evaluation instrument).
+3. Fix any validation errors and **Deploy** the form.
+4. Copy the **Form ID** from the URL: `https://kf.kobotoolbox.org/#/forms/{FORM_ID}/summary`
+5. Set `KOBOTOOLBOX_FORM_ID` in `.env`.
+6. Generate an API token (**Account Settings → Security → API Token**) and set `KOBOTOOLBOX_TOKEN`.
+
+> Field names in the XLSForm must match the `column` values in `calculo_eem_omec.csv` for scoring to work correctly.
+
+### 2. Mobile collection (KoboCollect)
+
+For **offline** field surveys on Android/iOS:
+
+1. Install **KoboCollect** from [Google Play](https://play.google.com/store/apps/details?id=org.koboc.collect.android) or the App Store.
+2. **General Settings** → set server URL: `https://kf.kobotoolbox.org`
+3. **Configure** → add the surveyor's Kobo **username and password** (not the API token).
+4. **Get Blank Form** → refresh → select the EEM-OMECS form → download.
+5. **Fill Blank Form** → complete all sections → save as **Finalized**.
+6. When connectivity is available: **Send Finalized Form** → select submissions → **Send Selected**.
+
+### 3. Web collection (Enketo)
+
+For online surveys (office, workshops, areas with stable internet):
+
+1. In KoboToolBox, open the deployed form → **Collect Data** → **Online data entry only**.
+2. Copy the Enketo URL (e.g. `https://ee.kobotoolbox.org/x/#...`) or QR code.
+3. Share the link with surveyors.
+4. Complete the form in any modern browser and click **Submit**.
+
+> Web forms require an active internet connection. Use KoboCollect for offline field work.
+
+### 4. View data in EEM-OMECS
+
+1. Confirm submissions appear in KoboToolBox (**Data** tab).
+2. Open the EEM-OMECS dashboard (`/`).
+3. Submissions load automatically; click one to see details at `/levantamiento/[id]`.
+4. Scoring is applied automatically using `calculo_eem_omec.csv`.
+
+**Verify via API:**
+
+```bash
+curl "http://localhost:3005/api/koboToolBox?action=submissions&page=1&pageSize=5"
+curl -X POST "http://localhost:3005/api/scoring" \
+  -H "Content-Type: application/json" \
+  -d '{"submissionId": "<UUID>"}'
+```
+
+For the full procedure in Spanish (validation, troubleshooting, permissions), see [Section 9 of the deployment guide](docs/DOCUMENTACION-DESPLIEGUE-WWF.md#9-recolección-de-datos-en-campo-kobotoolbox).
+
+## 📁 Project Structure
+
+```
+eem-omecs/
+├── calculo_eem_omec.csv           # Scoring rules
+├── .env.example                  # Environment template
+├── docker-compose.yml            # Production Docker Compose
+├── docker-compose.dev.yml        # Development Docker Compose
+├── Dockerfile                    # Production image
+├── docs/
+│   └── DOCUMENTACION-DESPLIEGUE-WWF.md  # Full deployment guide (ES)
+└── src/app/
+    ├── api/                      # REST endpoints
+    ├── config/koboToolBoxEnv.ts  # Kobo env config (server-side)
+    ├── components/
+    ├── hooks/
+    ├── levantamiento/            # Submission detail views
+    └── services/                 # Business logic
+```
 
 ## 📊 Application Features
 
@@ -161,85 +240,47 @@ src/
 - Multiple scoring algorithms support
 - Export capabilities for analysis
 
-### Data Management
-- Integration with KoboToolBox
-- CSV data visualization and analysis
-- Submission tracking and management
-- Historical data access
-
 ## 🏥 Health Monitoring
 
-The production container includes health checks that monitor the application status at `/api/health`.
+The production container includes health checks at `/api/health`:
+
+```bash
+curl http://localhost:3005/api/health
+```
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+**KoboToolBox not configured (HTTP 503):**
+- Set `KOBOTOOLBOX_FORM_ID` and `KOBOTOOLBOX_TOKEN` in `.env`
+- Or use mock mode: `/api/koboToolBox?action=submissions&mock=true`
 
-**Build Issues:**
-- Ensure all dependencies are properly installed
-- Check Next.js configuration
-- Verify Dockerfile syntax
+**Submissions not appearing:**
+- Verify data was sent from KoboCollect / Enketo
+- Check credentials and Form ID in `.env`
+- Review logs: `docker compose logs eem-omecs`
 
-**Runtime Issues:**
-- Check container logs: `docker compose logs eem-omecs`
-- Verify port 3000 is not already in use
-- Ensure CSV file exists and is accessible
+**Scoring empty or zero:**
+- Ensure XLSForm field names match `calculo_eem_omec.csv` column `column`
 
-**Performance Issues:**
-- Consider using a reverse proxy for SSL termination
-- Implement proper logging and monitoring
-- Use Docker volumes for persistent data if needed
+**Build / runtime issues:**
+- Check container logs and port availability (3005 in production Docker)
 
-### Getting Help
-
-1. Check the logs for error messages
-2. Verify environment configuration
-3. Ensure all required files are present
-4. Check Docker container status
-
-## 🚀 Production Deployment
-
-### Security Considerations
-- Run containers as non-root users
-- Implement proper logging and monitoring
-- Use reverse proxy for SSL termination
-- Regular security updates
-
-### Scaling
-- Use Docker Swarm or Kubernetes for production scaling
-- Implement load balancing
-- Consider horizontal scaling strategies
-
-### Monitoring
-- Health check endpoints
-- Log aggregation
-- Performance metrics
-- Error tracking
+See [docs/DOCUMENTACION-DESPLIEGUE-WWF.md](docs/DOCUMENTACION-DESPLIEGUE-WWF.md) for the complete troubleshooting guide.
 
 ## 🧹 Cleanup
 
 ```bash
-# Remove all containers and networks
 docker compose down --volumes --remove-orphans
-
-# Remove all images
-docker system prune -a
+docker system prune -a   # removes unused images
 ```
 
 ## 📚 Learn More
 
+- [Deployment guide (WWF — Spanish)](docs/DOCUMENTACION-DESPLIEGUE-WWF.md)
+- [KoboToolBox Documentation](https://support.kobotoolbox.org/)
+- [KoboCollect User Guide](https://support.kobotoolbox.org/data-collection/start/enketo-web-forms/)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [React Documentation](https://react.dev)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [Docker Documentation](https://docs.docker.com)
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
 
 ## 📄 License
 
