@@ -1,31 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ScoringResult, DetailedResult } from '../services/scoringService';
+import { ScoringResult } from '../services/scoringService';
+import { Dimension, QuestionSummary, sectionLabel, summarizeQuestions } from '../lib/questionSummary';
 
-type Level = 'critico' | 'bajo' | 'medio' | 'alto';
-type Dimension = 'eem' | 'genero' | 'omec';
+type Level = 'cero' | 'parcial' | 'maximo';
 type SortKey = 'percentage' | 'lost';
 
-interface QuestionSummary {
-  column: string;
-  question: string;
-  section: string;
-  dimensions: Dimension[];
-  score: number;
-  maxScore: number;
-  percentage: number;
-  level: Level;
-  answered: boolean;
-  selectedAnswers: string[];
-  bestAnswers: string[];
-}
-
-const LEVELS: { key: Level; label: string; range: string; chip: string; dot: string; bar: string }[] = [
-  { key: 'critico', label: 'Crítico', range: '< 40%', chip: 'text-red-400 bg-red-900/20 border-red-700', dot: 'bg-red-500', bar: 'bg-red-500' },
-  { key: 'bajo', label: 'Bajo', range: '40 – 59%', chip: 'text-orange-400 bg-orange-900/20 border-orange-700', dot: 'bg-orange-500', bar: 'bg-orange-500' },
-  { key: 'medio', label: 'Medio', range: '60 – 79%', chip: 'text-yellow-400 bg-yellow-900/20 border-yellow-700', dot: 'bg-yellow-500', bar: 'bg-yellow-500' },
-  { key: 'alto', label: 'Alto', range: '≥ 80%', chip: 'text-green-400 bg-green-900/20 border-green-700', dot: 'bg-green-500', bar: 'bg-green-500' },
+// Mismo criterio de color que la hoja "Resultados" de la herramienta
+const LEVELS: { key: Level; label: string; hint: string; chip: string; dot: string; bar: string }[] = [
+  { key: 'cero', label: 'Sin puntaje', hint: '0 pts', chip: 'text-red-400 bg-red-900/20 border-red-700', dot: 'bg-red-500', bar: 'bg-red-500' },
+  { key: 'parcial', label: 'Puntaje parcial', hint: '< máximo', chip: 'text-yellow-400 bg-yellow-900/20 border-yellow-700', dot: 'bg-yellow-500', bar: 'bg-yellow-500' },
+  { key: 'maximo', label: 'Puntaje máximo', hint: '= máximo', chip: 'text-green-400 bg-green-900/20 border-green-700', dot: 'bg-green-500', bar: 'bg-green-500' },
 ];
 
 const DIMENSIONS: { key: Dimension; label: string }[] = [
@@ -34,96 +20,20 @@ const DIMENSIONS: { key: Dimension; label: string }[] = [
   { key: 'omec', label: 'Potencial OMEC' },
 ];
 
-const SECTION_LABELS: Record<string, string> = {
-  area_conservacion: 'Área de conservación',
-  gestion: 'Gestión',
-  caracteristicas_area: 'Características del área',
-};
-
-const getLevel = (percentage: number): Level => {
-  if (percentage >= 80) return 'alto';
-  if (percentage >= 60) return 'medio';
-  if (percentage >= 40) return 'bajo';
-  return 'critico';
+const getLevel = (q: QuestionSummary): Level => {
+  if (q.score <= 0) return 'cero';
+  if (q.score >= q.maxScore) return 'maximo';
+  return 'parcial';
 };
 
 const levelInfo = (level: Level) => LEVELS.find(l => l.key === level)!;
-
-const sectionLabel = (section: string) => SECTION_LABELS[section] || section || 'Sin sección';
-
-const hasFlag = (value?: string) => !!value && value.trim() !== '' && value !== 'N/A';
-
-// Collapse the per-option detailed results into one summary per question
-const summarizeQuestions = (detailedResults: DetailedResult[]): QuestionSummary[] => {
-  const byColumn = new Map<string, DetailedResult[]>();
-  detailedResults.forEach(result => {
-    if (!byColumn.has(result.column)) byColumn.set(result.column, []);
-    byColumn.get(result.column)!.push(result);
-  });
-
-  const summaries: QuestionSummary[] = [];
-  byColumn.forEach((results, column) => {
-    const first = results[0];
-    const dimensions: Dimension[] = [];
-    if (results.some(r => hasFlag(r.eem))) dimensions.push('eem');
-    if (results.some(r => hasFlag(r.genero))) dimensions.push('genero');
-    if (results.some(r => hasFlag(r.omecPotential))) dimensions.push('omec');
-
-    let score: number;
-    let maxScore: number;
-    let answered: boolean;
-    let selectedAnswers: string[];
-    let bestAnswers: string[];
-
-    if (first.type === 'multiple_max' && first.multipleMaxDetails) {
-      const details = first.multipleMaxDetails;
-      score = first.score;
-      maxScore = first.maxScore;
-      selectedAnswers = details.filter(d => d.isSelected).map(d => d.displayName);
-      answered = selectedAnswers.length > 0;
-      const topScore = Math.max(0, ...details.map(d => d.score));
-      bestAnswers = details.filter(d => d.score === topScore && topScore > 0).map(d => d.displayName);
-    } else {
-      // Same results may be duplicated per category; dedupe by option value
-      const options = new Map<string, DetailedResult>();
-      results.forEach(r => {
-        if (!options.has(r.expectedValue)) options.set(r.expectedValue, r);
-      });
-      const optionList = Array.from(options.values());
-      score = Math.max(0, ...optionList.map(r => r.score));
-      maxScore = Math.max(0, ...optionList.map(r => r.maxScore));
-      answered = first.actualValue !== 'No respondido';
-      selectedAnswers = answered ? [first.actualValue] : [];
-      bestAnswers = optionList.filter(r => r.maxScore === maxScore && maxScore > 0).map(r => r.expectedValue);
-    }
-
-    if (maxScore <= 0) return;
-
-    const percentage = (score / maxScore) * 100;
-    summaries.push({
-      column,
-      question: first.question,
-      section: first.section,
-      dimensions,
-      score,
-      maxScore,
-      percentage,
-      level: getLevel(percentage),
-      answered,
-      selectedAnswers,
-      bestAnswers,
-    });
-  });
-
-  return summaries;
-};
 
 interface WeaknessDashboardProps {
   scoringResult: ScoringResult;
 }
 
 export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardProps) {
-  const [selectedLevels, setSelectedLevels] = useState<Set<Level>>(new Set(['critico']));
+  const [selectedLevels, setSelectedLevels] = useState<Set<Level>>(new Set(['cero']));
   const [dimension, setDimension] = useState<Dimension | 'all'>('all');
   const [section, setSection] = useState<string>('all');
   const [onlyUnanswered, setOnlyUnanswered] = useState(false);
@@ -131,7 +41,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
   const [sortKey, setSortKey] = useState<SortKey>('percentage');
 
   const questions = useMemo(
-    () => summarizeQuestions(scoringResult.detailedResults),
+    () => summarizeQuestions(scoringResult.detailedResults).map(q => ({ ...q, level: getLevel(q) })),
     [scoringResult.detailedResults]
   );
 
@@ -161,7 +71,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
   }, [scopedQuestions, selectedLevels, sortKey]);
 
   const levelCounts = useMemo(() => {
-    const counts: Record<Level, number> = { critico: 0, bajo: 0, medio: 0, alto: 0 };
+    const counts: Record<Level, number> = { cero: 0, parcial: 0, maximo: 0 };
     scopedQuestions.forEach(q => counts[q.level]++);
     return counts;
   }, [scopedQuestions]);
@@ -172,7 +82,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
       const s = stats.get(q.section) || { score: 0, maxScore: 0, weak: 0 };
       s.score += q.score;
       s.maxScore += q.maxScore;
-      if (q.level === 'critico' || q.level === 'bajo') s.weak++;
+      if (q.level === 'cero') s.weak++;
       stats.set(q.section, s);
     });
     return Array.from(stats.entries())
@@ -191,7 +101,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
   };
 
   const resetFilters = () => {
-    setSelectedLevels(new Set(['critico']));
+    setSelectedLevels(new Set(['cero']));
     setDimension('all');
     setSection('all');
     setOnlyUnanswered(false);
@@ -201,7 +111,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
   return (
     <div className="space-y-6">
       {/* Level distribution tiles (clickable filters) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {LEVELS.map(level => {
           const active = selectedLevels.has(level.key);
           return (
@@ -217,7 +127,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
                   <span className={`w-2.5 h-2.5 rounded-full ${level.dot}`}></span>
                   {level.label}
                 </span>
-                <span className="text-xs opacity-75 whitespace-nowrap">{level.range}</span>
+                <span className="text-xs opacity-75 whitespace-nowrap">{level.hint}</span>
               </div>
               <div className="mt-2 text-3xl font-bold">{levelCounts[level.key]}</div>
               <div className="text-xs opacity-75">
@@ -245,7 +155,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
       {/* Weakest sections */}
       {sectionStats.length > 0 && (
         <div className="bg-gray-800 rounded-xl border border-gray-700 p-5">
-          <h4 className="text-sm font-semibold text-white mb-4">Desempeño por sección</h4>
+          <h4 className="text-sm font-semibold text-white mb-4">Desempeño por ámbito</h4>
           <div className="space-y-3">
             {sectionStats.map(s => (
               <button
@@ -256,12 +166,12 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-300">{sectionLabel(s.key)}</span>
                   <span className="text-gray-400 whitespace-nowrap">
-                    {s.weak > 0 && <span className="text-red-400 mr-3">{s.weak} débiles</span>}
+                    {s.weak > 0 && <span className="text-red-400 mr-3">{s.weak} sin puntaje</span>}
                     <span className="font-medium text-white">{s.percentage.toFixed(1)}%</span>
                   </span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div className={`h-2 rounded-full ${levelInfo(getLevel(s.percentage)).bar}`} style={{ width: `${s.percentage}%` }}></div>
+                  <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${s.percentage}%` }}></div>
                 </div>
               </button>
             ))}
@@ -298,7 +208,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
             onChange={e => setSection(e.target.value)}
             className="px-3 py-2 rounded-lg bg-gray-700 border border-gray-600 text-sm text-white focus:outline-none focus:border-emerald-500"
           >
-            <option value="all">Todas las secciones</option>
+            <option value="all">Todos los ámbitos</option>
             {sections.map(s => (
               <option key={s} value={s}>{sectionLabel(s)}</option>
             ))}
@@ -331,7 +241,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
         <span>
           <span className="text-white font-semibold">{filteredQuestions.length}</span> preguntas
           {selectedLevels.size > 0 && selectedLevels.size < LEVELS.length && (
-            <> en nivel {LEVELS.filter(l => selectedLevels.has(l.key)).map(l => l.label.toLowerCase()).join(', ')}</>
+            <> · {LEVELS.filter(l => selectedLevels.has(l.key)).map(l => l.label).join(', ')}</>
           )}
         </span>
         <span>
@@ -375,7 +285,7 @@ export default function WeaknessDashboard({ scoringResult }: WeaknessDashboardPr
                   <div className={`h-1.5 rounded-full ${info.bar}`} style={{ width: `${q.percentage}%` }}></div>
                 </div>
 
-                {q.level !== 'alto' && (
+                {q.level !== 'maximo' && (
                   <div className="grid md:grid-cols-2 gap-3 mt-3 text-xs">
                     <div className="bg-gray-900/40 rounded-lg p-2.5">
                       <div className="text-gray-400 mb-1">Respuesta actual</div>

@@ -6,6 +6,8 @@ import {
   CategoryScore
 } from '../services/scoringService';
 import WeaknessDashboard from './WeaknessDashboard';
+import { INTERPRETATION_SCALES, InterpretationScale, getInterpretationLevel } from '../config/interpretation';
+import { sectionLabel, sectionTotals, summarizeQuestions } from '../lib/questionSummary';
 
 interface ScoringResultsProps {
   scoringResult: ScoringResult;
@@ -88,35 +90,6 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     if (percentage >= 60) return 'text-yellow-600 bg-yellow-900/20';
     if (percentage >= 40) return 'text-orange-600 bg-orange-900/20';
     return 'text-red-600 bg-red-900/20';
-  };
-
-  const getScoreBarColor = (percentage: number) => {
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 60) return 'bg-yellow-500';
-    if (percentage >= 40) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
-
-  // Small score icon component for headers
-  const ScoreIcon = ({ percentage, size = 'sm' }: { percentage: number; size?: 'xs' | 'sm' | 'md' }) => {
-    const getIconColor = (percentage: number) => {
-      if (percentage >= 80) return 'text-green-600 bg-green-900/20';
-      if (percentage >= 60) return 'text-yellow-600 bg-yellow-900/20';
-      if (percentage >= 40) return 'text-orange-600 bg-orange-900/20';
-      return 'text-red-600 bg-red-900/20';
-    };
-
-    const sizeClasses = {
-      xs: 'w-6 h-6 text-xs',
-      sm: 'w-8 h-8 text-sm',
-      md: 'w-10 h-10 text-base'
-    };
-
-    return (
-      <div className={`inline-flex items-center justify-center rounded-full font-bold ${getIconColor(percentage)} ${sizeClasses[size]}`}>
-        {percentage.toFixed(0)}%
-      </div>
-    );
   };
 
   const renderQuestionDetails = (categoryKey: string) => {
@@ -364,221 +337,157 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     );
   };
 
-  const renderOverview = () => {
-    // Calculate general score from category scores
-    const categoryTotalScore = scoringResult.categoryScores.reduce((sum, category) => sum + category.score, 0);
-    const categoryMaxScore = scoringResult.categoryScores.reduce((sum, category) => sum + category.maxScore, 0);
-    const categoryPercentage = categoryMaxScore > 0 ? (categoryTotalScore / categoryMaxScore) * 100 : 0;
-
-    // Get the appropriate color based on percentage
-    const getGeneralScoreColor = (percentage: number) => {
-      if (percentage >= 80) return 'from-green-500 to-emerald-600';
-      if (percentage >= 60) return 'from-yellow-500 to-amber-600';
-      if (percentage >= 40) return 'from-orange-500 to-red-500';
-      return 'from-red-500 to-red-600';
-    };
-
+  const renderScaleBar = (scale: InterpretationScale, percentage: number) => {
+    const current = getInterpretationLevel(scale, percentage);
+    let start = 0;
     return (
-      <div className="space-y-6">
-        {/* Overall Score */}
-        <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
-          <div className="flex items-center space-x-3 mb-4">
-            <h3 className="text-lg font-semibold text-white">
-              Puntuación General
-            </h3>
-            <ScoreIcon percentage={categoryPercentage} size="sm" />
-            {scoringResult.scoringVersion && (
-              <span className="ml-auto text-xs font-medium text-gray-300 bg-gray-700 rounded-full px-3 py-1">
-                Herramienta {scoringResult.scoringVersion.toUpperCase()}
-              </span>
-            )}
-          </div>
-          <div className="text-center">
-            <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r ${getGeneralScoreColor(categoryPercentage)} mb-4`}>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white">
-                  {categoryPercentage.toFixed(2)}%
-                </div>
-                <div className="text-sm text-white">
-                  {categoryTotalScore}/{categoryMaxScore}
-                </div>
-              </div>
-            </div>
-            <p className="text-gray-400">
-              Puntuación total obtenida en todas las preguntas
-            </p>
-          </div>
+      <div className="relative pt-3">
+        {/* Marker */}
+        <div
+          className="absolute top-0 -translate-x-1/2 w-0 h-0 border-x-[6px] border-x-transparent border-t-[8px] border-t-white"
+          style={{ left: `${Math.min(Math.max(percentage, 0), 100)}%` }}
+        ></div>
+        <div className="flex w-full h-3 rounded-full overflow-hidden gap-0.5">
+          {scale.levels.map(level => {
+            const width = level.max - start;
+            start = level.max;
+            return (
+              <div
+                key={level.label}
+                title={`${level.label}`}
+                style={{ width: `${width}%`, backgroundColor: level.color, opacity: level === current ? 1 : 0.3 }}
+              ></div>
+            );
+          })}
         </div>
       </div>
     );
   };
 
-  const renderCategories = () => {
-    // Group categories by type
-    const eemCategories = scoringResult.categoryScores.filter(cat => cat.categoryType === 'eem');
-    const generoCategories = scoringResult.categoryScores.filter(cat => cat.categoryType === 'genero');
-    const omecCategories = scoringResult.categoryScores.filter(cat => cat.categoryType === 'potencial_omec');
+  const renderScaleLegend = (scale: InterpretationScale, percentage: number) => {
+    const current = getInterpretationLevel(scale, percentage);
+    let min = 0;
+    return (
+      <div className="mt-3 grid gap-1 text-xs">
+        {scale.levels.map(level => {
+          const range = `${min} – ${level.max}%`;
+          min = level.max + 1;
+          return (
+            <div
+              key={level.label}
+              className={`flex items-center gap-2 px-2 py-1 rounded ${level === current ? 'bg-gray-700 text-white font-medium' : 'text-gray-400'}`}
+            >
+              <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: level.color }}></span>
+              <span className="w-20 shrink-0 tabular-nums">{range}</span>
+              <span>{level.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderDimensionCard = (category: CategoryScore) => {
+    const scale = INTERPRETATION_SCALES[category.categoryType];
+    const level = getInterpretationLevel(scale, category.percentage);
+    const keyPrefix = category.categoryType === 'potencial_omec' ? 'omec' : category.categoryType;
+    const categoryKey = `${keyPrefix}-${category.category}`;
+    const isExpanded = expandedCategories.has(categoryKey);
+    const legendKey = `legend-${categoryKey}`;
+    const showLegend = expandedCategories.has(legendKey);
 
     return (
-      <div className="space-y-8">
-        {/* Categorías */}
-        {/* EEM Categories */}
-        {eemCategories.length > 0 && (
-          <div className="space-y-6">
-           
-            {eemCategories.map((category, index) => (
-              <div key={index} className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
-                <div 
-                  className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-700 p-2 rounded-lg transition-colors"
-                  onClick={() => toggleCategory(`eem-${category.category}`)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-lg font-semibold text-white">
-                    Evaluación de Efectividad de Manejo (EEM)
-                    </h4>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className={`flex items-center justify-center px-4 py-2 rounded-xl font-bold text-lg ${getScoreColor(category.percentage)}`}>
-                      {category.percentage.toFixed(1)}%
-                    </div>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 transition-all duration-200 hover:bg-gray-600 ${expandedCategories.has(`eem-${category.category}`) ? 'bg-blue-900/20' : ''}`}>
-                      <svg 
-                        className={`w-5 h-5 text-gray-400 transition-all duration-200 ${expandedCategories.has(`eem-${category.category}`) ? 'text-blue-400 rotate-180' : ''}`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                      >
-                        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm text-gray-400 mb-2">
-                    <span>Puntuación: {category.score}/{category.maxScore}</span>
-                    <span>{category.questionCount} preguntas</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${getScoreBarColor(category.percentage)}`}
-                      style={{ width: `${category.percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Expandable Question Details */}
-                {expandedCategories.has(`eem-${category.category}`) && renderQuestionDetails(`eem-${category.category}`)}
-              </div>
-            ))}
+      <div key={categoryKey} className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h4 className="text-lg font-semibold text-white">{scale.title}</h4>
+            <p className="text-sm font-medium mt-1" style={{ color: level.color }}>{level.label}</p>
           </div>
-        )}
-
-        {/* Género Categories */}
-        {generoCategories.length > 0 && (
-          <div className="space-y-6">
-    
-            {generoCategories.map((category, index) => (
-              <div key={index} className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
-                <div 
-                  className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-700 p-2 rounded-lg transition-colors"
-                  onClick={() => toggleCategory(`genero-${category.category}`)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-lg font-semibold text-white">
-                      Evaluación de género
-                    </h4>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className={`flex items-center justify-center px-4 py-2 rounded-xl font-bold text-lg ${getScoreColor(category.percentage)}`}>
-                      {category.percentage.toFixed(1)}%
-                    </div>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 transition-all duration-200 hover:bg-gray-600 ${expandedCategories.has(`genero-${category.category}`) ? 'bg-blue-900/20' : ''}`}>
-                      <svg 
-                        className={`w-5 h-5 text-gray-400 transition-all duration-200 ${expandedCategories.has(`genero-${category.category}`) ? 'text-blue-400 rotate-180' : ''}`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                      >
-                        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm text-gray-400 mb-2">
-                    <span>Puntuación: {category.score}/{category.maxScore}</span>
-                    <span>{category.questionCount} preguntas</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${getScoreBarColor(category.percentage)}`}
-                      style={{ width: `${category.percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Expandable Question Details */}
-                {expandedCategories.has(`genero-${category.category}`) && renderQuestionDetails(`genero-${category.category}`)}
-              </div>
-            ))}
+          <div className="text-right">
+            <div className="text-3xl font-bold leading-none" style={{ color: level.color }}>
+              {category.percentage.toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-400 mt-1">
+              {category.score} / {category.maxScore} pts · {category.questionCount} preguntas
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* Potencial OMEC Categories */}
-        {omecCategories.length > 0 && (
-          <div className="space-y-6">
-           
-            {omecCategories.map((category, index) => (
-              <div key={index} className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
-                <div 
-                  className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-700 p-2 rounded-lg transition-colors"
-                  onClick={() => toggleCategory(`omec-${category.category}`)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <h4 className="text-lg font-semibold text-white">
-                      Potencial OMEC
-                    </h4>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className={`flex items-center justify-center px-4 py-2 rounded-xl font-bold text-lg ${getScoreColor(category.percentage)}`}>
-                      {category.percentage.toFixed(1)}%
-                    </div>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 transition-all duration-200 hover:bg-gray-600 ${expandedCategories.has(`omec-${category.category}`) ? 'bg-blue-900/20' : ''}`}>
-                      <svg 
-                        className={`w-5 h-5 text-gray-400 transition-all duration-200 ${expandedCategories.has(`omec-${category.category}`) ? 'text-blue-400 rotate-180' : ''}`}
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                      >
-                        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm text-gray-400 mb-2">
-                    <span>Puntuación: {category.score}/{category.maxScore}</span>
-                    <span>{category.questionCount} preguntas</span>
-                  </div>
-                  <div className="w-full bg-gray-700 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${getScoreBarColor(category.percentage)}`}
-                      style={{ width: `${category.percentage}%` }}
-                    ></div>
-                  </div>
-                </div>
+        <div className="mt-5">{renderScaleBar(scale, category.percentage)}</div>
 
-                {/* Expandable Question Details */}
-                {expandedCategories.has(`omec-${category.category}`) && renderQuestionDetails(`omec-${category.category}`)}
-              </div>
-            ))}
+        <div className="flex flex-wrap gap-4 mt-4 text-sm">
+          <button
+            onClick={() => toggleCategory(legendKey)}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            {showLegend ? 'Ocultar escala' : 'Ver escala de interpretación'}
+          </button>
+          <button
+            onClick={() => toggleCategory(categoryKey)}
+            className="text-gray-400 hover:text-white transition-colors"
+          >
+            {isExpanded ? 'Ocultar preguntas' : 'Ver preguntas'}
+          </button>
+        </div>
+
+        {showLegend && renderScaleLegend(scale, category.percentage)}
+        {isExpanded && renderQuestionDetails(categoryKey)}
+      </div>
+    );
+  };
+
+  const renderSectionChart = () => {
+    const totals = sectionTotals(summarizeQuestions(scoringResult.detailedResults));
+    if (totals.length === 0) return null;
+    const scaleMax = Math.max(...totals.map(t => t.maxScore));
+
+    return (
+      <div className="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
+          <h4 className="text-lg font-semibold text-white">Puntajes por ámbito</h4>
+          <div className="flex items-center gap-4 text-xs text-gray-400">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-500"></span>Obtenido</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-gray-600"></span>Máximo</span>
           </div>
+        </div>
+        <div className="space-y-4">
+          {totals.map(t => (
+            <div key={t.key}>
+              <div className="flex justify-between gap-3 text-sm mb-1.5">
+                <span className="text-gray-300">{sectionLabel(t.key)}</span>
+                <span className="text-gray-400 tabular-nums whitespace-nowrap">
+                  <span className="text-white font-semibold">{t.score}</span> / {t.maxScore} pts
+                </span>
+              </div>
+              <div className="h-3 rounded-full bg-gray-900/40">
+                <div className="h-3 rounded-full bg-gray-600 relative" style={{ width: `${(t.maxScore / scaleMax) * 100}%` }}>
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-emerald-500"
+                    style={{ width: `${t.maxScore > 0 ? (t.score / t.maxScore) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSummary = () => {
+    const order: CategoryScore['categoryType'][] = ['eem', 'genero', 'potencial_omec'];
+    const categories = [...scoringResult.categoryScores].sort(
+      (a, b) => order.indexOf(a.categoryType) - order.indexOf(b.categoryType)
+    );
+
+    return (
+      <div className="space-y-6">
+        {categories.map(renderDimensionCard)}
+        {renderSectionChart()}
+        {scoringResult.scoringVersion && (
+          <p className="text-xs text-gray-500 text-right">
+            Herramienta {scoringResult.scoringVersion.toUpperCase()}
+          </p>
         )}
       </div>
     );
@@ -609,13 +518,7 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
       </div>
 
       {activeTab === 'resumen' ? (
-        <>
-          {/* Categorías */}
-          {renderCategories()}
-
-          {/* Puntuación General */}
-          {renderOverview()}
-        </>
+        renderSummary()
       ) : (
         <WeaknessDashboard scoringResult={scoringResult} />
       )}
