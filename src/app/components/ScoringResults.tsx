@@ -5,6 +5,7 @@ import {
   ScoringResult,
   CategoryScore
 } from '../services/scoringService';
+import WeaknessDashboard from './WeaknessDashboard';
 
 interface ScoringResultsProps {
   scoringResult: ScoringResult;
@@ -12,6 +13,7 @@ interface ScoringResultsProps {
 }
 
 export default function ScoringResults({ scoringResult, onExport }: ScoringResultsProps) {
+  const [activeTab, setActiveTab] = useState<'resumen' | 'debiles'>('resumen');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [collapsedQuestions, setCollapsedQuestions] = useState<Set<string>>(() => {
     // Initialize with all questions collapsed by default
@@ -385,6 +387,11 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
               Puntuación General
             </h3>
             <ScoreIcon percentage={categoryPercentage} size="sm" />
+            {scoringResult.scoringVersion && (
+              <span className="ml-auto text-xs font-medium text-gray-300 bg-gray-700 rounded-full px-3 py-1">
+                Herramienta {scoringResult.scoringVersion.toUpperCase()}
+              </span>
+            )}
           </div>
           <div className="text-center">
             <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r ${getGeneralScoreColor(categoryPercentage)} mb-4`}>
@@ -577,13 +584,41 @@ export default function ScoringResults({ scoringResult, onExport }: ScoringResul
     );
   };
 
+  const tabs = [
+    { key: 'resumen' as const, label: 'Resumen por categoría' },
+    { key: 'debiles' as const, label: 'Puntos débiles' },
+  ];
+
   return (
     <div className="space-y-8">
-      {/* Categorías */}
-      {renderCategories()}
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-700">
+        {tabs.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 -mb-px text-sm font-medium border-b-2 transition-colors ${
+              activeTab === tab.key
+                ? 'border-emerald-500 text-white'
+                : 'border-transparent text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Puntuación General */}
-      {renderOverview()}
+      {activeTab === 'resumen' ? (
+        <>
+          {/* Categorías */}
+          {renderCategories()}
+
+          {/* Puntuación General */}
+          {renderOverview()}
+        </>
+      ) : (
+        <WeaknessDashboard scoringResult={scoringResult} />
+      )}
     </div>
   );
 }

@@ -34,6 +34,8 @@ export interface ScoringResult {
   percentage: number;
   categoryScores: CategoryScore[];
   detailedResults: DetailedResult[];
+  // Versión del CSV de puntajes usada (ej. 'v4', 'v7')
+  scoringVersion?: string;
 }
 
 export interface CategoryScore {
@@ -67,40 +69,60 @@ export interface DetailedResult {
   }>;
 }
 
-class ScoringService {
+export class ScoringService {
   private scoringRules: ScoringRule[] = [];
   private groupedMultipleMaxRules: Map<string, GroupedMultipleMaxRule> = new Map();
+  private scoringVersion: string | undefined;
+  // Kobo __version__ for which the current rules were loaded ('' = no version)
+  private loadedKoboVersion: string | null = null;
+  private rulesCache: Map<string, { version: string | undefined; rules: Record<string, unknown>[] }> = new Map();
 
-  async loadScoringRules(): Promise<void> {
+  async loadScoringRules(koboVersion?: string): Promise<void> {
     try {
-      // Try to determine if we're on the client or server side
-      let apiUrl = '/api/csv-data';
-      
-      // If we're on the client side, try to use the full URL
-      if (typeof window !== 'undefined') {
-        const baseUrl = window.location.origin;
-        apiUrl = `${baseUrl}/api/csv-data`;
+      const cacheKey = koboVersion ?? '';
+      let cached = this.rulesCache.get(cacheKey);
+
+      if (!cached) {
+        // Try to determine if we're on the client or server side
+        let apiUrl = '/api/csv-data';
+
+        // If we're on the client side, try to use the full URL
+        if (typeof window !== 'undefined') {
+          const baseUrl = window.location.origin;
+          apiUrl = `${baseUrl}/api/csv-data`;
+        }
+        if (koboVersion) {
+          apiUrl += `?koboVersion=${encodeURIComponent(koboVersion)}`;
+        }
+
+        console.log('Loading scoring rules from:', apiUrl);
+
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`Failed to load scoring rules: ${response.status} ${response.statusText}`);
+        }
+        cached = {
+          version: response.headers.get('X-Scoring-Version') ?? undefined,
+          rules: await response.json()
+        };
+        this.rulesCache.set(cacheKey, cached);
       }
-      
-      console.log('Loading scoring rules from:', apiUrl);
-      
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to load scoring rules: ${response.status} ${response.statusText}`);
-      }
-      const rules = await response.json();
-      
-      await this.processScoringRules(rules);
+
+      await this.processScoringRules(cached.rules);
+      this.scoringVersion = cached.version;
+      this.loadedKoboVersion = cacheKey;
     } catch (error) {
       console.error('Error loading scoring rules:', error);
       throw error;
     }
   }
 
-  async loadScoringRulesFromData(rules: Record<string, unknown>[]): Promise<void> {
+  async loadScoringRulesFromData(rules: Record<string, unknown>[], scoringVersion?: string, koboVersion?: string): Promise<void> {
     try {
-      console.log('Loading scoring rules from provided data:', rules.length, 'rules');
+      console.log('Loading scoring rules from provided data:', rules.length, 'rules', scoringVersion ?? '');
       await this.processScoringRules(rules);
+      this.scoringVersion = scoringVersion;
+      this.loadedKoboVersion = koboVersion ?? '';
     } catch (error) {
       console.error('Error loading scoring rules from data:', error);
       throw error;
@@ -326,8 +348,10 @@ class ScoringService {
   }
 
   async evaluateSubmission(submission: KoboToolBoxSubmission): Promise<ScoringResult> {
-    if (this.scoringRules.length === 0) {
-      await this.loadScoringRules();
+    // Each submission is scored with the CSV matching the Kobo form version it was filled with
+    const koboVersion = typeof submission.__version__ === 'string' ? submission.__version__ : undefined;
+    if (this.scoringRules.length === 0 || this.loadedKoboVersion !== (koboVersion ?? '')) {
+      await this.loadScoringRules(koboVersion);
     }
 
     const detailedResults: DetailedResult[] = [];
@@ -559,7 +583,8 @@ class ScoringService {
       maxPossibleScore,
       percentage: maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0,
       categoryScores,
-      detailedResults
+      detailedResults,
+      scoringVersion: this.scoringVersion
     };
 
     // Ensure percentage is calculated with proper precision

@@ -21,6 +21,8 @@ services:
       - ./src:/app/src
       - ./public:/app/public
       - ./calculo_eem_omec.csv:/app/calculo_eem_omec.csv:ro
+      - ./calculo_eem_omec_v7.csv:/app/calculo_eem_omec_v7.csv:ro
+      - ./scoring_versions.json:/app/scoring_versions.json:ro
     restart: unless-stopped
     networks:
       - eem-omecs-dev-network

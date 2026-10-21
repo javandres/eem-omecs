@@ -528,6 +528,8 @@ class KoboToolBoxService {
       submittedBy: submission.submittedBy,
       formType: submission.formType,
       priority: submission.priority,
+      // Kobo form version, used to pick the scoring CSV
+      __version__: submission.__version__,
     };
     for (const key in submission) {
       if (key.includes('/')) {

@@ -1,33 +1,20 @@
-import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { parse } from 'csv-parse/sync';
+import { NextRequest, NextResponse } from 'next/server';
+import { loadScoringCsv, resolveScoringVersion } from '../../lib/scoringCsv';
 
-export async function GET() {
+// ?version=v4 pide un CSV concreto; ?koboVersion=<__version__> lo resuelve según scoring_versions.json
+export async function GET(request: NextRequest) {
   try {
-    // Ruta al archivo CSV en la raíz del proyecto
-    const csvPath = path.join(process.cwd(), 'calculo_eem_omec.csv');
-    
-    // Leer el archivo CSV
-    const csvContent = await fs.readFile(csvPath, 'utf-8');
-    
-    // Parsear el CSV
-    const records = parse(csvContent, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true
+    const { searchParams } = new URL(request.url);
+    const version = await resolveScoringVersion({
+      version: searchParams.get('version'),
+      koboVersion: searchParams.get('koboVersion')
     });
 
-    // Filtrar filas que no sean datos válidos (como las filas start, end, today)
-    const validRecords = records.filter((record: unknown) => {
-      const rec = record as Record<string, unknown>;
-      return rec.column && 
-        rec.column !== 'start' && 
-        rec.column !== 'end' && 
-        rec.column !== 'today';
-    });
+    const validRecords = await loadScoringCsv(version);
 
-    return NextResponse.json(validRecords);
+    return NextResponse.json(validRecords, {
+      headers: { 'X-Scoring-Version': version }
+    });
   } catch (error) {
     console.error('Error reading CSV file:', error);
     return NextResponse.json(

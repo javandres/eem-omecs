@@ -1,0 +1,21 @@
+{
+  "default": "v7",
+  "versions": {
+    "v4": {
+      "file": "calculo_eem_omec.csv",
+      "koboVersions": [
+        "vu8xLCRaACZTJ5t6pT3xMD",
+        "v76aWJy7e7mZHhWg9DadJK",
+        "vNP3MZKaw8PYPdMmTHXTWo",
+        "vNHFVbE3GiYurzMB7K7PYs",
+        "vUC8yojji7dF4aJCaQo7TR",
+        "vFaBnCYF8DoGxhNy5Eexbz",
+        "vXMKdEbckXSpcYeB7Katxu"
+      ]
+    },
+    "v7": {
+      "file": "calculo_eem_omec_v7.csv",
+      "koboVersions": []
+    }
+  }
+}

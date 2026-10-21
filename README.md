@@ -142,7 +142,10 @@ Credentials are read server-side only (`src/app/config/koboToolBoxEnv.ts`). The 
 | Local `npm run dev` | 3000 | — |
 
 ### Data Sources
-- **CSV Data**: `calculo_eem_omec.csv` — scoring rules (mounted read-only in Docker)
+- **CSV Data**: scoring rules, versioned per Kobo form version (mounted read-only in Docker)
+  - `calculo_eem_omec.csv` — v4 (submissions from the original form)
+  - `calculo_eem_omec_v7.csv` — v7 (Herramienta EEM OMEC V7)
+  - `scoring_versions.json` — maps each Kobo `__version__` to a CSV; unlisted versions use `default`. After redeploying an older form, add its version id to the matching entry.
 - **KoboToolBox**: Form submissions via API proxy
 
 ## 📋 Data Collection with KoboToolBox
@@ -164,7 +167,7 @@ XLSForm → KoboToolBox → Field collection (mobile/web) → EEM-OMECS dashboar
 5. Set `KOBOTOOLBOX_FORM_ID` in `.env`.
 6. Generate an API token (**Account Settings → Security → API Token**) and set `KOBOTOOLBOX_TOKEN`.
 
-> Field names in the XLSForm must match the `column` values in `calculo_eem_omec.csv` for scoring to work correctly.
+> Field names in the XLSForm must match the `column` values in the scoring CSVs for scoring to work correctly.
 
 ### 2. Mobile collection (KoboCollect)
 
@@ -210,7 +213,9 @@ For the full procedure in Spanish (validation, troubleshooting, permissions), se
 
 ```
 eem-omecs/
-├── calculo_eem_omec.csv           # Scoring rules
+├── calculo_eem_omec.csv           # Scoring rules v4
+├── calculo_eem_omec_v7.csv        # Scoring rules v7
+├── scoring_versions.json         # Kobo form version → scoring CSV
 ├── .env.example                  # Environment template
 ├── docker-compose.yml            # Production Docker Compose
 ├── docker-compose.dev.yml        # Development Docker Compose
